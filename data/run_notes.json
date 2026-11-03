@@ -1,0 +1,112 @@
+[
+ {
+  "run_id": "2026-11-03T1904",
+  "pt_time": "2026-11-03 12:04",
+  "sites": [
+   {
+    "declRate": 0.025,
+    "declToday": 0,
+    "flag": false,
+    "n": "Coquitlam",
+    "note": "179 open, 103 shipped today, on-time today 98.1%, 17 aged over 3 days",
+    "open": 179,
+    "val": 17852.85
+   },
+   {
+    "declRate": 0.014,
+    "declToday": 4,
+    "flag": false,
+    "n": "Flint",
+    "note": "164 open, 344 shipped today, on-time today 99.1%, 0 aged over 3 days, 4 declines today",
+    "open": 164,
+    "val": 20491.76
+   },
+   {
+    "declRate": 0.085,
+    "declToday": 0,
+    "flag": true,
+    "n": "3031-JD Sports Carrefour Angrignon Shopping Centre",
+    "note": "90 open, 0 shipped today, 0 aged over 3 days",
+    "open": 90,
+    "val": 10177.56
+   },
+   {
+    "declRate": 0.085,
+    "declToday": 1,
+    "flag": true,
+    "n": "3014-JD Sports CF Market Mall",
+    "note": "46 open, 11 shipped today, 1 decline today",
+    "open": 46,
+    "val": 3886.86
+   },
+   {
+    "declRate": 0.027,
+    "declToday": 0,
+    "flag": true,
+    "n": "3010-JD Sports CF Polo Park",
+    "note": "32 open, 0 shipped today, 12 aged over 3 days",
+    "open": 32,
+    "val": 3418.09
+   },
+   {
+    "declRate": 0,
+    "declToday": 0,
+    "flag": true,
+    "n": "3020-JD Sports CrossIron Mills",
+    "note": "32 open, 13 shipped today, 19 aged over 3 days",
+    "open": 32,
+    "val": 2978.45
+   },
+   {
+    "declRate": 0.098,
+    "declToday": 0,
+    "flag": true,
+    "n": "3009-JD Sports CF Lime Ridge",
+    "note": "31 open, 0 shipped today",
+    "open": 31,
+    "val": 2927.46
+   },
+   {
+    "declRate": 0.429,
+    "declToday": 0,
+    "flag": true,
+    "n": "3003-JD Sports West Edmonton Mall",
+    "note": "27 open, 18 shipped today, 13 aged over 3 days, 42.9% decline rate MTD",
+    "open": 27,
+    "val": 3906.44
+   },
+   {
+    "declRate": 0.077,
+    "declToday": 0,
+    "flag": true,
+    "n": "3028-JD Sports Metropolis at Metrotown",
+    "note": "13 open, 0 shipped today",
+    "open": 13,
+    "val": 2166.86
+   },
+   {
+    "declRate": 0.196,
+    "declToday": 5,
+    "flag": false,
+    "n": "3017-JD Sports Southcentre Mall",
+    "note": "4 open, 5 declines today, 19.6% decline rate MTD",
+    "open": 4,
+    "val": 415.18
+   },
+   {
+    "declRate": 0.109,
+    "declToday": 4,
+    "flag": false,
+    "n": "3039-JD Sports Fairview Park",
+    "note": "1 open, 4 declines today",
+    "open": 1,
+    "val": 185
+   }
+  ],
+  "observations": [
+   "Open orders are in line with a usual Tuesday at 12pm (828 vs 828), but Carrefour Angrignon now holds 90 open orders worth $10,178 with nothing shipped today, up from 48 at 9am.",
+   "Angrignon alone is 19% of all store open orders, and with CF Polo Park (32 open) and CF Lime Ridge (31 open) also at 0 shipped, the open share of 24h orders has edged up to 33.5% vs a usual 31.9%.",
+   "CF Polo Park (12) and CrossIron Mills (19) hold 31 of the 76 orders aged over 3 days, about two in five of the company total."
+  ]
+ }
+]

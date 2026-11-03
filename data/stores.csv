@@ -1,0 +1,49 @@
+code,site,region,province,jd_store
+1001,1001-Chinatown,BC,,False
+1004,1004-Spadina,ON,,False
+1005,1005-Rue Clark,QC and Atlantic,,False
+1006,1006-Bute,BC,,False
+2001,2001-Queen St.,ON,,False
+2002,2002-Bute St.,BC,,False
+3001,3001-JD Sports Guildford Town Centre,BC,BC,True
+3002,3002-JD Sports CF Fairview Mall,ON,ON,True
+3003,3003-JD Sports West Edmonton Mall,Prairies,AB,True
+3004,3004-JD Sports CF Chinook Centre,Prairies,AB,True
+3005,3005-JD Sports Vaughan Mills,ON,ON,True
+3006,3006-JD Sports Scarborough Town Centre,ON,ON,True
+3007,3007-JD Sports Bramalea City Centre,ON,ON,True
+3008,3008-JD Sports Oshawa Centre,ON,ON,True
+3009,3009-JD Sports CF Lime Ridge,ON,ON,True
+3010,3010-JD Sports CF Polo Park,Prairies,MB,True
+3012,3012-JD Sports CF Richmond Centre,BC,BC,True
+3014,3014-JD Sports CF Market Mall,Prairies,AB,True
+3015,3015-JD Sports CF Carrefour Laval,QC and Atlantic,QC,True
+3016,3016-JD Sports CF Markville,ON,ON,True
+3017,3017-JD Sports Southcentre Mall,Prairies,AB,True
+3018,3018-JD Sports Kingsway Mall,Prairies,AB,True
+3020,3020-JD Sports CrossIron Mills,Prairies,AB,True
+3021,3021-JD Sports Pickering Town Centre,ON,ON,True
+3022,3022-JD Sports Georgian Mall,ON,ON,True
+3023,3023-JD Sports Les Galeries de la Capitale,QC and Atlantic,QC,True
+3024,3024-JD Sports Willowbrook Shopping Centre,BC,BC,True
+3025,3025-JD Sports Mayfair Shopping Centre,BC,BC,True
+3026,3026-JD Sports Robson,BC,BC,True
+3027,3027-JD Sports Southgate Centre,Prairies,AB,True
+3028,3028-JD Sports Metropolis at Metrotown,BC,BC,True
+3029,3029-JD Sports Tsawwassen Mills,BC,BC,True
+3030,3030-JD Sports Sevenoaks Shopping Centre,BC,BC,True
+3031,3031-JD Sports Carrefour Angrignon Shopping Centre,QC and Atlantic,QC,True
+3032,3032-JD Sports Square One Shopping Centre,ON,ON,True
+3033,3033-JD Sports Cornwall Centre,Prairies,SK,True
+3034,3034-JD Sports Midtown Plaza,Prairies,SK,True
+3035,3035-JD Sports Galeries d'Anjou Shopping Centre,QC and Atlantic,QC,True
+3036,3036-JD Sports CF Rideau Centre,ON,ON,True
+3037,3037-JD Sports Woodgrove Centre,BC,BC,True
+3038,3038-JD Sports Dufferin Mall,ON,ON,True
+3039,3039-JD Sports Fairview Park,ON,ON,True
+3040,3040-JD Sports St. Vital Centre,Prairies,MB,True
+3042,3042-JD Sports CF Toronto Eaton Centre,ON,ON,True
+3045,3045-JD Sports Fairview Pointe Claire,QC and Atlantic,,True
+3047,3047-JD Sports Champlain Place,QC and Atlantic,NB,True
+3048,3048-JD Sports Coquitlam Centre,BC,BC,True
+3051,3051-JD Sports Intercity Mall,ON,ON,True
