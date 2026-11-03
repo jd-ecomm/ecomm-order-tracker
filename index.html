@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Ecomm Order Tracker</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -567,8 +568,17 @@ tbox.addEventListener('keydown',e=>{if(!TG)return;if(e.key==='ArrowLeft'||e.key=
 window.addEventListener('resize',()=>{renderTip();renderTTip()});
 
 (async()=>{
-  const db=window.claude&&await claude.use('db');
-  if(!db){$('empty').hidden=false;$('empty').textContent='Sign in to claude.ai to load the snapshot log.';$('stamp').innerHTML='Open order snapshot · <b>Offline</b>';return}
+  let db=null;try{db=window.claude&&await claude.use('db')}catch(e){db=null}
+  if(!db){
+    // Outside Claude (e.g. GitHub Pages): read the data file the scheduled runs publish next to this page.
+    try{
+      const d=await (await fetch('data/tracker.json?t='+Date.now(),{cache:'no-store'})).json();
+      S.rows=(d.snapshots||[]).filter(r=>r&&r.ts&&r.open!=null).sort((a,b)=>a.ts-b.ts);
+      S.runs=d.runs||{};S.runList=Object.values(S.runs).filter(r=>r&&r.ts).sort((a,b)=>a.ts-b.ts);
+      S.meta=d.latest||null;S.stores=d.stores||{};
+      renderAll();return;
+    }catch(e){console.error(e)}
+    $('empty').hidden=false;$('empty').textContent='The data file could not be loaded. Try refreshing the page.';$('stamp').innerHTML='Open order snapshot · <b>Offline</b>';return}
   db.collection('snapshots').orderBy('ts','desc').limit(1000).onSnapshot(s=>{S.rows=s.docs.map(d=>d.data()).filter(r=>r&&r.ts&&r.open!=null).sort((a,b)=>a.ts-b.ts);renderAll()},e=>console.error(e));
   db.doc('meta/stores').onSnapshot(s=>{S.stores=s.exists?(s.data().info||{}):{};if(S.rows.length)renderAll()},e=>console.error(e));
   db.doc('meta/latest').onSnapshot(s=>{S.meta=s.exists?s.data():null;if(S.rows.length)renderAll()},e=>console.error(e));
