@@ -159,7 +159,7 @@ td.hi{color:var(--alert);font-weight:600} td.lo{color:var(--teal);font-weight:60
 </header>
 
 <div class="wrap">
-  <div id="empty" class="empty" hidden>No snapshots logged yet. The 9:10am, 12:10pm and 5:10pm PT runs add one each.</div>
+  <div id="empty" class="empty" hidden>No snapshots logged yet. The 9:10am, 12:10pm and 4:10pm PT runs add one each.</div>
 
   <nav class="picker" id="picker" hidden aria-label="Choose a snapshot">
     <div class="prow">
@@ -189,7 +189,7 @@ td.hi{color:var(--alert);font-weight:600} td.lo{color:var(--teal);font-weight:60
         <div class="prow" id="metrics" role="group" aria-label="Chart metric"></div></div>
       <div class="chart" id="chartBox"><div id="chart"></div><div class="tip" id="tip" hidden></div></div>
       <div class="toggles" id="toggles" role="group" aria-label="Chart series"></div>
-      <p class="cnote">Hover or tap the chart to compare an hour. Click a 9am, 12pm or 5pm point to open that update. Arrow keys work when the chart is focused.</p>
+      <p class="cnote">Hover or tap the chart to compare an hour. Click a 9am, 12pm or 4pm point to open that update. Arrow keys work when the chart is focused.</p>
     </section>
     <section class="panel">
       <h2>Watch list</h2>
@@ -230,7 +230,7 @@ td.hi{color:var(--alert);font-weight:600} td.lo{color:var(--teal);font-weight:60
     <div class="tblwrap"><table><thead><tr><th>Day</th><th>Time</th><th>Open</th><th>Open %</th><th>Value</th><th>&gt;3 days</th><th>On hold</th><th>On-time today</th><th>Declines today</th><th>Decline rate MTD</th></tr></thead><tbody id="log"></tbody></table></div>
   </section>
 
-  <p class="foot">Refreshed Monday to Friday at 9:10am, 12:10pm and 5:10pm PT from the hourly VCS_JDSF Open Order Snapshot (sent at about :05 past each hour, 3am to 9pm PT); Open % of 24h orders = open orders ÷ (open + orders shipped in the last 24 hours + orders declined in the last 24 hours). "Usual" is the same Pacific hour over the 7 days before the snapshot you are viewing, adjusted for the day of the week. Stat holidays are excluded. Declines and on-time reset daily. In the log, red cells are 15%+ above the average for that check time and teal cells 15%+ below. Click a row to open it.</p>
+  <p class="foot">Refreshed Monday to Friday at 9:10am, 12:10pm and 4:10pm PT (5:10pm before 4 Nov 2026) from the hourly VCS_JDSF Open Order Snapshot (sent at about :05 past each hour, 3am to 9pm PT); Open % of 24h orders = open orders ÷ (open + orders shipped in the last 24 hours + orders declined in the last 24 hours). "Usual" is the same Pacific hour over the 7 days before the snapshot you are viewing, adjusted for the day of the week. Stat holidays are excluded. Declines and on-time reset daily. In the log, red cells are 15%+ above the average for that check time and teal cells 15%+ below. Click a row to open it.</p>
 </div>
 
 <script>
@@ -250,7 +250,10 @@ const pct=v=>(v*100).toFixed(1)+'%';
 const int=v=>Math.round(v).toLocaleString();
 const mean=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:null;
 const hl=h=>h===0?'12am':h===12?'12pm':h>12?(h-12)+'pm':h+'am';
-const CHECK=new Set([9,12,17]);
+const CHECK=new Set([9,12,16,17]);
+// Check times: 9am, 12pm and 5pm until 3 Nov 2026, then 9am, 12pm and 4pm (evening update moved before 5pm).
+const EVE=d=>d>='2026-11-04'?16:17;
+const isCheckTs=ts=>{const h=hourOf(ts);return h===9||h===12||h===EVE(dayOf(ts))};
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 const docId=ts=>new Date(ts).toISOString().slice(0,16).replace(':','');
 
@@ -291,7 +294,7 @@ function expected(rows,L,k){
   return mean(recent.map(([,o])=>o.v/f(o.wd)))*f(wdOf(L.ts));
 }
 
-const checks=()=>S.rows.filter(r=>CHECK.has(hourOf(r.ts)));
+const checks=()=>S.rows.filter(r=>isCheckTs(r.ts));
 function selRow(){const R=checks();if(!R.length)return S.rows[S.rows.length-1]||null;return (S.sel!=null&&R.find(r=>r.ts===S.sel))||R[R.length-1]}
 const isLatest=L=>{const C=checks();return L===C[C.length-1]};
 function select(ts){S.sel=ts;S.hover=null;renderAll()}
@@ -301,7 +304,7 @@ function renderPicker(L){
   const ld=dayOf(L.ts);
   $('daySel').innerHTML=days.map(d=>{const r=R.find(x=>dayOf(x.ts)===d);return `<option value="${d}"${d===ld?' selected':''}>${fmtDay.format(new Date(r.ts))}</option>`}).join('');
   const dayRows=R.filter(r=>dayOf(r.ts)===ld);
-  $('hours').innerHTML=dayRows.map(r=>{const h=hourOf(r.ts);return `<button class="pill${CHECK.has(h)?' check':''}${r.ts===L.ts?' on':''}" data-ts="${r.ts}" aria-pressed="${r.ts===L.ts}">${hl(h)}</button>`}).join('');
+  $('hours').innerHTML=dayRows.map(r=>{const h=hourOf(r.ts);return `<button class="pill${isCheckTs(r.ts)?' check':''}${r.ts===L.ts?' on':''}" data-ts="${r.ts}" aria-pressed="${r.ts===L.ts}">${hl(h)}</button>`}).join('');
   const on=$('hours').querySelector('.on');if(on)on.scrollIntoView({block:'nearest',inline:'center'});
   const i=R.indexOf(L),last=i===R.length-1;
   $('prev').disabled=i<=0;$('next').disabled=last;$('latest').classList.toggle('on',last);
@@ -347,12 +350,12 @@ function renderChart(L){
   const ax='font-family="Inter Tight, Arial, sans-serif" font-size="11" fill="#8A8B8C"';
   let g='';for(let v=0;v<=ymax+1e-9;v+=step)g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="#2E2E2E" stroke-dasharray="3 3"/><text x="${pl-6}" y="${y(v)+4}" text-anchor="end" ${ax}>${M.f(v)}</text>`;
   [3,6,9,12,15,18,21].forEach(h=>g+=`<text x="${x(h)}" y="${Ht-9}" text-anchor="middle" ${ax}>${hl(h)}</text>`);
-  [9,12,17].forEach(h=>g+=`<line x1="${x(h)}" x2="${x(h)}" y1="${pt}" y2="${Ht-pb}" stroke="#3D3D3D"/>`);
+  [9,12,EVE(ld)].forEach(h=>g+=`<line x1="${x(h)}" x2="${x(h)}" y1="${pt}" y2="${Ht-pb}" stroke="#3D3D3D"/>`);
   const path=pts=>'M'+pts.map(p=>x(p.h).toFixed(1)+','+y(p.v).toFixed(1)).join('L');
   const band=sh.band&&st.length?`<path d="M${st.map(s=>x(s.h)+','+y(s.max)).join('L')}L${st.slice().reverse().map(s=>x(s.h)+','+y(s.min)).join('L')}Z" fill="rgba(255,222,20,.13)"/>`:'';
   const avg=sh.avg&&st.length?`<path d="${path(st.map(s=>({h:s.h,v:s.avg})))}" fill="none" stroke="#CCCCCC" stroke-width="1.5"/>`:'';
   const lw=sh.lw&&lwPts.length?`<path d="${path(lwPts)}" fill="none" stroke="#43D5B0" stroke-width="1.75" stroke-dasharray="5 4"/>`:'';
-  const dl=sh.day&&dayPts.length?`<path d="${path(dayPts)}" fill="none" stroke="#FFDE14" stroke-width="3" stroke-linejoin="round"/>`+dayPts.map(p=>`<circle cx="${x(p.h)}" cy="${y(p.v)}" r="${p.ts===L.ts?6:CHECK.has(p.h)?4.5:2.5}" fill="${p.ts===L.ts?'#EFFF04':'#FFDE14'}" stroke="#121212" stroke-width="${p.ts===L.ts?2:0}"/>`).join(''):'';
+  const dl=sh.day&&dayPts.length?`<path d="${path(dayPts)}" fill="none" stroke="#FFDE14" stroke-width="3" stroke-linejoin="round"/>`+dayPts.map(p=>`<circle cx="${x(p.h)}" cy="${y(p.v)}" r="${p.ts===L.ts?6:isCheckTs(p.ts)?4.5:2.5}" fill="${p.ts===L.ts?'#EFFF04':'#FFDE14'}" stroke="#121212" stroke-width="${p.ts===L.ts?2:0}"/>`).join(''):'';
   const sp=dayPts.find(p=>p.ts===L.ts);
   const lab=sh.day&&sp?`<text x="${Math.min(x(sp.h)+10,W-pr-50)}" y="${Math.max(y(sp.v)-10,pt+10)}" fill="#EFFF04" font-family="Inter Tight, Arial, sans-serif" font-size="13" font-weight="700">${M.f(sp.v)}</text>`:'';
   const guide=S.hover!=null?`<line x1="${x(S.hover)}" x2="${x(S.hover)}" y1="${pt}" y2="${Ht-pb}" stroke="#FFFFFF" stroke-opacity=".5"/>`:'';
@@ -372,7 +375,7 @@ function renderTip(){
   if(S.show.band&&s)html+=row('rgba(255,222,20,.5)','7-day range',`${M.f(s.min)} to ${M.f(s.max)}`);
   if(S.show.lw)html+=row('#43D5B0','Last week',w?M.f(w.v):'n/a');
   if(d&&s&&s.avg){const diff=k=>S.metric==='openPct'?((d.v-s.avg)*100).toFixed(1)+' pts':Math.round((d.v/s.avg-1)*100)+'%';html+=`<div class="r"><span>vs average</span><strong>${(d.v>=s.avg?'+':'')+diff()}</strong></div>`}
-  if(d&&CHECK.has(h))html+=`<div class="hint">Click to open this update</div>`;
+  if(d&&isCheckTs(d.ts))html+=`<div class="hint">Click to open this update</div>`;
   tip.innerHTML=html;tip.hidden=false;
   const px=(svg.left-box.left)+G.x(h)*sc,tw=tip.offsetWidth;
   tip.style.left=Math.max(0,Math.min(px+12+tw>box.width?px-12-tw:px+12,box.width-tw))+'px';
@@ -394,7 +397,7 @@ function renderLog(L){
   const R=S.rows,days=[...new Set(R.map(r=>dayOf(r.ts)))].slice(-10).reverse();
   const avgOf=(h,k)=>mean(R.filter(r=>hourOf(r.ts)===h).map(r=>r[k]).filter(v=>v!=null));
   let tr='';
-  days.forEach(d=>[17,12,9].forEach(h=>{
+  days.forEach(d=>[EVE(d),12,9].forEach(h=>{
     const r=R.find(q=>dayOf(q.ts)===d&&hourOf(q.ts)===h);if(!r)return;
     const cls=k=>{const a=avgOf(h,k);return a==null||r[k]==null?'':r[k]>a*1.15?'hi':r[k]<a*.85?'lo':''};
     tr+=`<tr data-ts="${r.ts}" class="${r.ts===L.ts?'sel':''}" tabindex="0"><td>${fmtDay.format(new Date(r.ts))}</td><td>${hl(h)}</td><td class="${cls('open')}">${int(r.open)}</td><td class="${cls('openPct')}">${r.openPct!=null?pct(r.openPct):'–'}</td><td>${money(r.val)}</td><td class="${cls('gt3')}">${r.gt3}</td><td>${r.hold}</td><td>${pct(r.otToday)}</td><td class="${cls('declToday')}">${r.declToday}</td><td>${pct(r.declRate)}</td></tr>`;
@@ -481,7 +484,7 @@ function renderTrend(hist){
   const ax='font-family="Inter Tight, Arial, sans-serif" font-size="11" fill="#8A8B8C"';
   let g='';for(let v=0;v<=ymax+1e-9;v+=step)g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="#2E2E2E" stroke-dasharray="3 3"/><text x="${pl-6}" y="${y(v)+4}" text-anchor="end" ${ax}>${f(v)}</text>`;
   let lastDay='';H.forEach((h,i)=>{const d=dayOf(h.ts);if(d!==lastDay){lastDay=d;g+=`<line x1="${x(i)}" x2="${x(i)}" y1="${pt}" y2="${Ht-pb}" stroke="#242424"/><text x="${x(i)+3}" y="${Ht-22}" ${ax}>${fmtDay.format(new Date(h.ts)).replace(/^\w+, /,'')}</text>`}});
-  g+=`<text x="${pl}" y="${Ht-6}" ${ax}>Each point is a 9am, 12pm or 5pm update</text>`;
+  g+=`<text x="${pl}" y="${Ht-6}" ${ax}>Each point is a 9am, 12pm or 4pm update (5pm before 4 Nov)</text>`;
   const seg=pts.filter(p=>p.v!=null);
   const line=seg.length?`<path d="M${seg.map(p=>x(p.i).toFixed(1)+','+y(p.v).toFixed(1)).join('L')}" fill="none" stroke="#FFDE14" stroke-width="2.5" stroke-linejoin="round"/>`:'';
   const av=`<path d="M${avg.map((v,i)=>v==null?'':x(i).toFixed(1)+','+y(v).toFixed(1)).filter(Boolean).join('L')}" fill="none" stroke="#CCCCCC" stroke-width="1.25" stroke-dasharray="4 4"/>`;
@@ -551,8 +554,8 @@ $('log').addEventListener('keydown',e=>{if(e.key==='Enter'){const r=e.target.clo
 const box=$('chartBox');
 box.addEventListener('pointermove',e=>{const h=hourFromEvent(e);if(h!=null&&h!==S.hover){S.hover=h;renderChart(selRow())}});
 box.addEventListener('pointerleave',()=>{if(S.hover!=null){S.hover=null;renderChart(selRow())}});
-box.addEventListener('click',e=>{const h=hourFromEvent(e);if(h==null||!G||!CHECK.has(h))return;const p=G.dayPts.find(q=>q.h===h);if(p)select(p.ts)});
-box.addEventListener('keydown',e=>{if(!G)return;if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();const cur=S.hover??hourOf(selRow().ts);S.hover=Math.max(3,Math.min(21,cur+(e.key==='ArrowLeft'?-1:1)));renderChart(selRow());$('svg').focus()}else if(e.key==='Enter'&&S.hover!=null){const p=CHECK.has(S.hover)&&G.dayPts.find(q=>q.h===S.hover);if(p){select(p.ts);$('svg').focus()}}else if(e.key==='Escape'){S.hover=null;renderChart(selRow())}});
+box.addEventListener('click',e=>{const h=hourFromEvent(e);if(h==null||!G)return;const p=G.dayPts.find(q=>q.h===h);if(p&&isCheckTs(p.ts))select(p.ts)});
+box.addEventListener('keydown',e=>{if(!G)return;if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();const cur=S.hover??hourOf(selRow().ts);S.hover=Math.max(3,Math.min(21,cur+(e.key==='ArrowLeft'?-1:1)));renderChart(selRow());$('svg').focus()}else if(e.key==='Enter'&&S.hover!=null){const p=G.dayPts.find(q=>q.h===S.hover);if(p&&isCheckTs(p.ts)){select(p.ts);$('svg').focus()}}else if(e.key==='Escape'){S.hover=null;renderChart(selRow())}});
 $('stabs').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(b){S.st.tab=b.dataset.t;S.st.hover=null;renderStores(selRow())}});
 $('regPills').addEventListener('click',e=>{const b=e.target.closest('[data-r]');if(b){S.st.reg=b.dataset.r;renderStores(selRow())}});
 $('rankTbl').addEventListener('click',e=>{const h=e.target.closest('th[data-k]');if(h){const k=h.dataset.k;if(k==='trend')return;if(S.st.sort===k)S.st.dir*=-1;else{S.st.sort=k;S.st.dir=k==='n'?1:-1}renderStores(selRow());return}const r=e.target.closest('tr[data-s]');if(r){S.st.store=r.dataset.s;S.st.tab='trend';renderStores(selRow())}});
