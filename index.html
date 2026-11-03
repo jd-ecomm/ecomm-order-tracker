@@ -1,0 +1,577 @@
+<title>Ecomm Order Tracker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: JD brand v2 ops board. Yellow hero band (Roundel flush right), snapshot picker, observations, KPI cards vs same-hour usual, interactive intraday chart + watch list, check-time log. Dark mode, single theme by choice. */
+@font-face{font-family:'Forever Forward Sans';src:url('fonts/ForeverForwardSans-Headline.woff2') format('woff2');font-weight:400 900;font-style:normal;font-display:swap}
+:root{
+  --jd-yellow:#FFDE14;--jd-bright:#EFFF04;--teal:#43D5B0;--gray:#A7A8A9;--alert:#FF5A4F;
+  --bg:#000;--s1:#121212;--s2:#1B1B1B;--s3:#242424;--line:#2E2E2E;--line2:#3D3D3D;
+  --fg:#FFFFFF;--fg2:#CCCCCC;--fg3:#8A8B8C;--ink:#000;
+  --band:rgba(255,222,20,.13);
+  --display:'Forever Forward Sans','Arial Narrow',Impact,sans-serif;
+  --body:'Inter Tight','Helvetica Neue',Arial,sans-serif;
+  color-scheme:dark;
+}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--body);font-size:14px;line-height:1.45}
+:focus-visible{outline:2px solid var(--jd-yellow);outline-offset:2px}
+button{font-family:inherit;cursor:pointer}
+.dsp,h1,h2,h3{font-family:var(--display);font-style:normal;font-weight:400;text-transform:uppercase;letter-spacing:-0.02em;line-height:.77;margin:0}
+
+/* hero */
+.hero{position:relative;overflow:hidden;background:var(--jd-yellow);color:var(--ink)}
+.hero-in{position:relative;max-width:1180px;margin:0 auto;padding-block:26px 22px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.hero-txt{padding-right:130px;display:flex;flex-direction:column;gap:12px}
+.brand{font-weight:700;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase}
+.hero h1{font-size:72px;color:var(--ink)}
+.hero h1 .l2{display:block;margin-left:.136em}
+.stamp{font-size:12px;font-weight:500;color:rgba(0,0,0,.72);letter-spacing:.02em}
+.stamp b{color:var(--ink);font-weight:700}
+.roundel{position:absolute;right:max(16px,env(safe-area-inset-right,0px));top:24px;width:72px;height:72px;color:var(--ink)}
+.roundel svg{width:100%;height:100%;display:block}
+.divider{position:absolute;right:calc(max(16px,env(safe-area-inset-right,0px)) + 100px);top:-30px;bottom:-30px;width:2px;background:var(--ink);transform:rotate(10deg)}
+
+.wrap{max-width:1180px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:28px}
+h2{font-size:30px;color:var(--fg);margin-bottom:14px}
+.lab{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3)}
+
+/* snapshot picker */
+.picker{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:rgba(0,0,0,.92);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.prow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.pill{border:1px solid var(--line);background:var(--s2);color:var(--fg2);border-radius:999px;padding:7px 12px;font-weight:600;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill:hover{border-color:var(--line2);color:var(--fg)}
+.pill.on{background:var(--jd-yellow);border-color:var(--jd-yellow);color:#000}
+.pill.check{border-color:var(--line2)}
+.pill.check::after{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--jd-yellow);margin-left:6px;vertical-align:middle}
+.pill.on.check::after{background:#000}
+.pill[disabled]{opacity:.35;cursor:default}
+select.pill{appearance:none;padding-right:28px;background-image:linear-gradient(45deg,transparent 50%,var(--fg2) 50%),linear-gradient(135deg,var(--fg2) 50%,transparent 50%);background-position:calc(100% - 15px) 50%,calc(100% - 10px) 50%;background-size:5px 5px;background-repeat:no-repeat}
+.hours{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin;min-width:0;flex:1}
+.histnote{font-size:12px;color:var(--jd-yellow);font-weight:600}
+
+/* KPI cards */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.kpi{background:var(--s1);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.kpi .val{font-family:var(--display);font-size:52px;line-height:.85;letter-spacing:-0.01em;font-variant-numeric:tabular-nums;margin-top:4px}
+.kpi .base{font-size:11.5px;color:var(--fg2);font-variant-numeric:tabular-nums}
+.kpi .base.sub{color:var(--fg3)}
+.chip{display:inline-flex;align-items:center;font-weight:700;font-size:11px;letter-spacing:.04em;padding:3px 8px;border-radius:999px;width:max-content;font-variant-numeric:tabular-nums}
+.chip.good{background:rgba(67,213,176,.14);color:var(--teal)}
+.chip.bad{background:rgba(255,90,79,.14);color:var(--alert)}
+.chip.flat{background:var(--s3);color:var(--gray)}
+
+.grid2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:860px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:18px;min-width:0}
+.chead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.chead h2{margin-bottom:10px}
+.chart{position:relative}
+.chart svg{width:100%;height:auto;display:block;touch-action:pan-y}
+.chart svg:focus-visible{outline:2px solid var(--jd-yellow);outline-offset:4px;border-radius:6px}
+.tip{position:absolute;pointer-events:none;background:var(--s3);border:1px solid var(--line2);border-radius:10px;padding:10px 12px;font-size:12px;min-width:170px;box-shadow:0 8px 24px rgba(0,0,0,.5);font-variant-numeric:tabular-nums;z-index:2}
+.tip b{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);margin-bottom:6px}
+.tip .r{display:flex;justify-content:space-between;gap:14px}
+.tip .r i{display:inline-block;width:10px;height:3px;margin-right:6px;vertical-align:middle}
+.tip .hint{margin-top:6px;color:var(--jd-yellow);font-size:11px}
+.toggles{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.toggles .pill{opacity:.55}
+.toggles .pill.on{background:var(--s3);color:var(--fg);border-color:var(--fg3);opacity:1}
+.toggles .pill i{display:inline-block;width:12px;height:3px;margin-right:6px;vertical-align:middle}
+.cnote{font-size:11.5px;color:var(--fg3);margin-top:8px}
+
+.watch{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.watch li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:10px 0 10px 12px;border-bottom:1px solid var(--line);border-left:3px solid transparent}
+.watch li:last-child{border-bottom:0}
+.watch li.flag{border-left-color:var(--alert)}
+.watch .n{font-weight:600}
+.watch .m{font-family:var(--display);font-size:26px;line-height:.85;text-align:right;font-variant-numeric:tabular-nums}
+.watch .s{grid-column:1/-1;font-size:12px;color:var(--fg3)}
+.watch .none{color:var(--fg3);font-size:12.5px;padding:10px 0;border:0}
+
+.tblwrap{border:1px solid var(--line);border-radius:14px;overflow:auto;max-height:560px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:12.5px;min-width:680px}
+th{position:sticky;top:0;background:var(--s2);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--fg3);text-align:right;padding:10px}
+th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
+td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right}
+tbody tr{cursor:pointer}
+tbody tr:hover td{background:var(--s2)}
+tbody tr.sel td{background:rgba(255,222,20,.10)}
+td.hi{color:var(--alert);font-weight:600} td.lo{color:var(--teal);font-weight:600}
+
+.obs{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.obs div{background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px}
+.obs h3{font-size:26px;line-height:.8;color:var(--jd-yellow)}
+.obs p{margin:0;max-width:62ch;color:var(--fg2)}
+.obsnone{font-size:12.5px;color:var(--fg3);margin:0}
+
+.empty{padding:40px 16px;text-align:center;color:var(--fg3);border:1px dashed var(--line2);border-radius:14px}
+.foot{font-size:11.5px;color:var(--fg3);max-width:110ch;margin:0}
+@media (max-width:700px){.hero h1{font-size:48px}.hero-txt{padding-right:96px}.roundel{width:56px;height:56px}.divider{right:calc(max(16px,env(safe-area-inset-right,0px)) + 76px)}.kpi .val{font-size:44px}}
+/* stores */
+.stabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.sbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.ssub{font-size:12px;color:var(--fg3);margin:0 0 12px}
+#rankTbl th{cursor:pointer;user-select:none;white-space:nowrap}
+#rankTbl th.on{color:var(--jd-yellow)}
+#rankTbl td.nm{font-weight:600;white-space:nowrap}
+#rankTbl td .rg{display:block;font-weight:500;font-size:11px;color:var(--fg3)}
+#rankTbl tr.flag td:first-child{box-shadow:inset 3px 0 0 var(--alert)}
+.spark{display:block}
+.dlt{font-size:11px;font-weight:600}
+.dlt.up{color:var(--alert)} .dlt.dn{color:var(--teal)}
+.offs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.offs li{display:grid;grid-template-columns:minmax(0,1.3fr) auto minmax(0,1.6fr);gap:6px 16px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.offs li:hover{background:var(--s2)}
+.offs li.more{display:block;cursor:default;border:0}
+.offs .n{font-weight:600}
+.offs .n small{display:block;font-weight:500;color:var(--fg3);font-size:11.5px}
+.offs .c{font-family:var(--display);font-size:30px;line-height:.85;text-align:right;font-variant-numeric:tabular-nums}
+.offs .c small{font-family:var(--body);font-size:11px;color:var(--fg3);display:block;line-height:1.3}
+.dots{display:flex;flex-wrap:wrap;gap:3px}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--s3);display:block}
+.dots i.on{background:var(--alert)}
+.dots i.day{margin-left:5px}
+@media (max-width:640px){.offs li{grid-template-columns:minmax(0,1fr) auto}.offs .dots{grid-column:1/-1}}
+.regs{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.reg{background:var(--s2);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.reg h3{font-size:26px;color:var(--fg)}
+.reg .big{font-family:var(--display);font-size:44px;line-height:.85;font-variant-numeric:tabular-nums}
+.reg .kv{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:12px;color:var(--fg2);font-variant-numeric:tabular-nums}
+.reg .kv b{color:var(--fg);font-weight:600;text-align:right}
+.reg .top{font-size:11.5px;color:var(--fg3)}
+.trendBox{position:relative}
+@media (prefers-reduced-motion:no-preference){.tip{transition:left .08s linear,top .08s linear}}
+</style>
+
+<header class="hero">
+  <div class="hero-in">
+    <div class="hero-txt">
+      <span class="brand">JD Sports Canada · Ecommerce</span>
+      <h1>Ecomm<span class="l2">Order Tracker</span></h1>
+      <div class="stamp" id="stamp">Open order snapshot · <b>Loading…</b></div>
+    </div>
+    <span class="divider" aria-hidden="true"></span>
+    <span class="roundel"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 144" role="img" aria-label="JD Sports"><path fill="currentColor" d="M 88.144531 52.375 L 81.914062 91.605469 C 81.914062 91.605469 105.574219 95.359375 109.203125 72.070312 C 112.828125 48.777344 88.144531 52.375 88.144531 52.375"/><path fill="currentColor" d="M 72 0 C 32.234375 0 0 32.234375 0 72 C 0 111.765625 32.234375 144 72 144 C 111.765625 144 144 111.765625 144 72 C 144 52.90625 136.414062 34.589844 122.910156 21.089844 C 109.410156 7.585938 91.097656 0 72 0 M 21.121094 108.078125 L 23.359375 91.359375 C 50.320312 91.359375 54.878906 36.238281 54.878906 36.238281 L 72 36.238281 C 59.839844 115.359375 21.121094 108.078125 21.121094 108.078125 M 87.121094 106.160156 L 63.121094 106.160156 L 74.878906 36.078125 L 98.878906 36.078125 C 121.28125 36.078125 129.601562 53.597656 126.71875 71.199219 C 124.1875 91.152344 107.230469 106.117188 87.121094 106.160156"/></svg></span>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="empty" class="empty" hidden>No snapshots logged yet. The 9:10am, 12:10pm and 5:10pm PT runs add one each.</div>
+
+  <nav class="picker" id="picker" hidden aria-label="Choose a snapshot">
+    <div class="prow">
+      <span class="lab">Viewing</span>
+      <button class="pill" id="prev" aria-label="Previous snapshot">◀</button>
+      <select class="pill" id="daySel" aria-label="Day"></select>
+      <button class="pill" id="next" aria-label="Next snapshot">▶</button>
+      <button class="pill" id="latest">Latest</button>
+      <span class="histnote" id="histnote" hidden>Past snapshot · usual is as of that time</span>
+    </div>
+    <div class="prow"><span class="lab">Time PT</span><div class="hours" id="hours" role="group" aria-label="Snapshot time"></div></div>
+  </nav>
+
+  <section id="obssec" hidden>
+    <h2>Observations</h2>
+    <div class="obs" id="obs"></div>
+  </section>
+
+  <section id="main" hidden>
+    <h2>Now vs usual</h2>
+    <div class="kpis" id="kpis"></div>
+  </section>
+
+  <div class="grid2" id="mid" hidden>
+    <section class="panel">
+      <div class="chead"><h2 id="chartTitle">Open orders through the day</h2>
+        <div class="prow" id="metrics" role="group" aria-label="Chart metric"></div></div>
+      <div class="chart" id="chartBox"><div id="chart"></div><div class="tip" id="tip" hidden></div></div>
+      <div class="toggles" id="toggles" role="group" aria-label="Chart series"></div>
+      <p class="cnote">Hover or tap the chart to compare an hour. Click a 9am, 12pm or 5pm point to open that update. Arrow keys work when the chart is focused.</p>
+    </section>
+    <section class="panel">
+      <h2>Watch list</h2>
+      <ul class="watch" id="watch"></ul>
+    </section>
+  </div>
+
+  <section id="storesec" class="panel" hidden>
+    <h2>Stores</h2>
+    <div class="stabs" id="stabs" role="tablist" aria-label="Store views">
+      <button class="pill" data-t="rank" role="tab">Ranking</button>
+      <button class="pill" data-t="trend" role="tab">Store trend</button>
+      <button class="pill" data-t="offs" role="tab">Repeat offenders</button>
+      <button class="pill" data-t="regions" role="tab">Regions</button>
+    </div>
+    <div id="sv-rank">
+      <div class="sbar" id="regPills" role="group" aria-label="Region filter"></div>
+      <p class="ssub" id="rankSub"></p>
+      <div class="tblwrap"><table id="rankTbl"><thead><tr></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div id="sv-trend" hidden>
+      <div class="sbar"><select class="pill" id="storeSel" aria-label="Store"></select><div class="prow" id="tMetrics" role="group" aria-label="Trend metric"></div></div>
+      <p class="ssub" id="trendSub"></p>
+      <div class="chart trendBox" id="trendBox"><div id="trendChart"></div><div class="tip" id="ttip" hidden></div></div>
+    </div>
+    <div id="sv-offs" hidden>
+      <p class="ssub" id="offsSub"></p>
+      <ul class="offs" id="offs"></ul>
+    </div>
+    <div id="sv-regions" hidden>
+      <p class="ssub" id="regSub"></p>
+      <div class="regs" id="regs"></div>
+    </div>
+  </section>
+
+  <section id="logsec" hidden>
+    <h2>Check-time log</h2>
+    <div class="tblwrap"><table><thead><tr><th>Day</th><th>Time</th><th>Open</th><th>Open %</th><th>Value</th><th>&gt;3 days</th><th>On hold</th><th>On-time today</th><th>Declines today</th><th>Decline rate MTD</th></tr></thead><tbody id="log"></tbody></table></div>
+  </section>
+
+  <p class="foot">Refreshed Monday to Friday at 9:10am, 12:10pm and 5:10pm PT from the hourly VCS_JDSF Open Order Snapshot (sent at about :05 past each hour, 3am to 9pm PT); Open % of 24h orders = open orders ÷ (open + orders shipped in the last 24 hours + orders declined in the last 24 hours). "Usual" is the same Pacific hour over the 7 days before the snapshot you are viewing, adjusted for the day of the week. Stat holidays are excluded. Declines and on-time reset daily. In the log, red cells are 15%+ above the average for that check time and teal cells 15%+ below. Click a row to open it.</p>
+</div>
+
+<script>
+const TZ='America/Vancouver';
+const fmtH=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,hour:'numeric',hour12:false});
+const fmtD=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'});
+const fmtLong=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit'});
+const fmtDay=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,weekday:'short',day:'numeric',month:'short'});
+const fmtWd=new Intl.DateTimeFormat('en-US',{timeZone:TZ,weekday:'short'});
+const hourOf=ts=>+fmtH.format(new Date(ts))%24;
+const dayOf=ts=>fmtD.format(new Date(ts));
+const WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const wdOf=ts=>WD.indexOf(fmtWd.format(new Date(ts)));
+const $=id=>document.getElementById(id);
+const money=v=>'$'+(v>=1000?(v/1000).toFixed(1)+'K':Math.round(v));
+const pct=v=>(v*100).toFixed(1)+'%';
+const int=v=>Math.round(v).toLocaleString();
+const mean=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:null;
+const hl=h=>h===0?'12am':h===12?'12pm':h>12?(h-12)+'pm':h+'am';
+const CHECK=new Set([9,12,17]);
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+const docId=ts=>new Date(ts).toISOString().slice(0,16).replace(':','');
+
+const METRICS={
+  open:{lab:'Open orders',short:'Open',f:int},
+  openPct:{lab:'Open % of 24h orders',short:'Open %',f:pct},
+  val:{lab:'Open value',short:'Value',f:money},
+  gt3:{lab:'Aged over 3 days',short:'Aged >3d',f:int},
+  declToday:{lab:'Declines today',short:'Declines',f:int},
+};
+const S={rows:[],meta:null,runs:{},runList:[],stores:{},st:{tab:'rank',sort:'open',dir:-1,reg:'All',store:null,tm:'open',hover:null},sel:null,metric:'open',show:{day:true,avg:true,band:true,lw:false},hover:null};
+
+function chip(cur,base,goodDir,isPts){
+  if(cur==null)return '<span class="chip flat">No data</span>';
+  if(base==null||base===0)return '<span class="chip flat">No baseline</span>';
+  const d=isPts?(cur-base)*100:(cur-base)/base*100;
+  if(Math.abs(d)<(isPts?1:2))return '<span class="chip flat">In line</span>';
+  const up=d>0,good=(up&&goodDir==='up')||(!up&&goodDir==='down');
+  const txt=(up?'▲ ':'▼ ')+Math.abs(d).toFixed(isPts?1:0)+(isPts?' pts':'%');
+  return `<span class="chip ${good?'good':'bad'}">${txt}</span>`;
+}
+
+const HOL=new Set(['2026-10-12','2026-11-11','2026-12-25','2026-12-26','2027-01-01']);
+const GRP={6:'wkend',0:'wkend',1:'mon',2:'mid',3:'mid',4:'mid',5:'fri'};
+const PCTK=new Set(['otToday']);
+const dnum=s=>Date.parse(s+'T12:00:00Z')/864e5;
+// Day-of-week aware "usual" as of snapshot L: same PT hour, scaled by a learned weekday factor (mirrors baseline.py)
+function expected(rows,L,k){
+  const lh=hourOf(L.ts),ld=dayOf(L.ts),byDay=new Map();
+  rows.forEach(r=>{if(r.ts>L.ts)return;const d=dayOf(r.ts);if(hourOf(r.ts)===lh&&d!==ld&&!HOL.has(d)&&r[k]!=null)byDay.set(d,{v:r[k],wd:wdOf(r.ts)})});
+  const T=dnum(ld),recent=[...byDay].filter(([d])=>T-dnum(d)>0&&T-dnum(d)<=7);
+  if(!recent.length)return null;
+  if(PCTK.has(k))return mean(recent.map(([,o])=>o.v));
+  const ratios={};
+  byDay.forEach((o,d)=>{const w=[...byDay].filter(([dd])=>Math.abs(dnum(dd)-dnum(d))<=3).map(([,x])=>x.v);const m=mean(w);if(w.length>=4&&m>0)(ratios[o.wd]=ratios[o.wd]||[]).push(o.v/m)});
+  const grp={};Object.entries(ratios).forEach(([wd,rs])=>{(grp[GRP[wd]]=grp[GRP[wd]]||[]).push(...rs)});
+  const f=wd=>(ratios[wd]||[]).length>=2?mean(ratios[wd]):(grp[GRP[wd]]||[]).length?mean(grp[GRP[wd]]):1;
+  return mean(recent.map(([,o])=>o.v/f(o.wd)))*f(wdOf(L.ts));
+}
+
+const checks=()=>S.rows.filter(r=>CHECK.has(hourOf(r.ts)));
+function selRow(){const R=checks();if(!R.length)return S.rows[S.rows.length-1]||null;return (S.sel!=null&&R.find(r=>r.ts===S.sel))||R[R.length-1]}
+const isLatest=L=>{const C=checks();return L===C[C.length-1]};
+function select(ts){S.sel=ts;S.hover=null;renderAll()}
+
+function renderPicker(L){
+  const R=checks(),days=[...new Set(R.map(r=>dayOf(r.ts)))].reverse();
+  const ld=dayOf(L.ts);
+  $('daySel').innerHTML=days.map(d=>{const r=R.find(x=>dayOf(x.ts)===d);return `<option value="${d}"${d===ld?' selected':''}>${fmtDay.format(new Date(r.ts))}</option>`}).join('');
+  const dayRows=R.filter(r=>dayOf(r.ts)===ld);
+  $('hours').innerHTML=dayRows.map(r=>{const h=hourOf(r.ts);return `<button class="pill${CHECK.has(h)?' check':''}${r.ts===L.ts?' on':''}" data-ts="${r.ts}" aria-pressed="${r.ts===L.ts}">${hl(h)}</button>`}).join('');
+  const on=$('hours').querySelector('.on');if(on)on.scrollIntoView({block:'nearest',inline:'center'});
+  const i=R.indexOf(L),last=i===R.length-1;
+  $('prev').disabled=i<=0;$('next').disabled=last;$('latest').classList.toggle('on',last);
+  $('histnote').hidden=last;$('picker').hidden=false;
+}
+
+function renderKpis(L){
+  const R=S.rows,b=k=>expected(R,L,k),lh=hourOf(L.ts);
+  const wdName=['Sundays','Mondays','Tuesdays','Wednesdays','Thursdays','Fridays','Saturdays'][wdOf(L.ts)];
+  const K=[
+    ['Open orders',int(L.open),b('open'),L.open,'down',false,int],
+    ['Open % of 24h orders',L.openPct!=null?pct(L.openPct):'n/a',b('openPct'),L.openPct,'down',true,pct,L.ship24!=null?`${int(L.open)} of ${int(L.open+L.ship24+L.decl24)} (open + ${int(L.ship24)} shipped + ${L.decl24} declined, 24h)`:''],
+    ['Open value',money(L.val),b('val'),L.val,'down',false,money],
+    ['Aged over 3 days',L.gt3,b('gt3'),L.gt3,'down',false,int],
+    ['On hold',L.hold,b('hold'),L.hold,'down',false,int],
+    ['On-time ship today',pct(L.otToday),b('otToday'),L.otToday,'up',true,pct],
+    ['Declines today',L.declToday,b('declToday'),L.declToday,'down',false,int],
+  ];
+  $('kpis').innerHTML=K.map(([lab,v,base,cur,gd,pts,f,note])=>`<div class="kpi"><span class="lab">${lab}</span><span class="val">${v}</span>${chip(cur,base,gd,pts)}<span class="base">Usual ${base==null?'n/a':f(base)} · ${wdName} at ${hl(lh)}</span>${note?`<span class="base sub">${note}</span>`:''}</div>`).join('')
+   +`<div class="kpi"><span class="lab">Warehouse / stores</span><span class="val">${L.wOpen} / ${L.sOpen}</span><span class="base">Open orders by fulfilment source</span></div>`
+   +`<div class="kpi"><span class="lab">Fiscal MTD on time</span><span class="val">${pct(L.otMTD)}</span><span class="base">Decline rate ${pct(L.declRate)}</span></div>`;
+  $('main').hidden=false;
+}
+
+// chart geometry shared with the pointer handlers
+let G=null;
+function niceStep(max){const raw=max/4,p=Math.pow(10,Math.floor(Math.log10(raw))),n=raw/p;return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p}
+function renderChart(L){
+  const R=S.rows,k=S.metric,M=METRICS[k],ld=dayOf(L.ts);
+  $('chartTitle').textContent=M.lab+' through the day';
+  $('metrics').innerHTML=Object.entries(METRICS).map(([key,m])=>`<button class="pill${key===k?' on':''}" data-m="${key}" aria-pressed="${key===k}">${m.short}</button>`).join('');
+  const H=[];for(let h=3;h<=21;h++)H.push(h);
+  const prior=R.filter(r=>dayOf(r.ts)!==ld&&r.ts<L.ts&&r.ts>L.ts-8*864e5&&r[k]!=null);
+  const st=H.map(h=>{const a=prior.filter(r=>hourOf(r.ts)===h).map(r=>r[k]);return a.length?{h,avg:mean(a),min:Math.min(...a),max:Math.max(...a)}:null}).filter(Boolean);
+  const dayPts=R.filter(r=>dayOf(r.ts)===ld&&r[k]!=null).map(r=>({h:hourOf(r.ts),v:r[k],ts:r.ts})).filter(p=>p.h>=3&&p.h<=21);
+  const lwDay=dayOf(L.ts-7*864e5);
+  const lwPts=R.filter(r=>dayOf(r.ts)===lwDay&&r[k]!=null).map(r=>({h:hourOf(r.ts),v:r[k]})).filter(p=>p.h>=3&&p.h<=21);
+  const sh=S.show;
+  const vals=[...(sh.band?st.flatMap(s=>[s.min,s.max]):[]),...(sh.avg?st.map(s=>s.avg):[]),...(sh.day?dayPts.map(p=>p.v):[]),...(sh.lw?lwPts.map(p=>p.v):[])];
+  const W=640,Ht=290,pl=52,pr=16,pt=16,pb=30;
+  const vmax=Math.max(...vals,k==='openPct'?0.1:10),step=niceStep(vmax),ymax=Math.ceil(vmax/step)*step;
+  const x=h=>pl+(h-3)/18*(W-pl-pr),y=v=>pt+(1-v/ymax)*(Ht-pt-pb);
+  const ax='font-family="Inter Tight, Arial, sans-serif" font-size="11" fill="#8A8B8C"';
+  let g='';for(let v=0;v<=ymax+1e-9;v+=step)g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="#2E2E2E" stroke-dasharray="3 3"/><text x="${pl-6}" y="${y(v)+4}" text-anchor="end" ${ax}>${M.f(v)}</text>`;
+  [3,6,9,12,15,18,21].forEach(h=>g+=`<text x="${x(h)}" y="${Ht-9}" text-anchor="middle" ${ax}>${hl(h)}</text>`);
+  [9,12,17].forEach(h=>g+=`<line x1="${x(h)}" x2="${x(h)}" y1="${pt}" y2="${Ht-pb}" stroke="#3D3D3D"/>`);
+  const path=pts=>'M'+pts.map(p=>x(p.h).toFixed(1)+','+y(p.v).toFixed(1)).join('L');
+  const band=sh.band&&st.length?`<path d="M${st.map(s=>x(s.h)+','+y(s.max)).join('L')}L${st.slice().reverse().map(s=>x(s.h)+','+y(s.min)).join('L')}Z" fill="rgba(255,222,20,.13)"/>`:'';
+  const avg=sh.avg&&st.length?`<path d="${path(st.map(s=>({h:s.h,v:s.avg})))}" fill="none" stroke="#CCCCCC" stroke-width="1.5"/>`:'';
+  const lw=sh.lw&&lwPts.length?`<path d="${path(lwPts)}" fill="none" stroke="#43D5B0" stroke-width="1.75" stroke-dasharray="5 4"/>`:'';
+  const dl=sh.day&&dayPts.length?`<path d="${path(dayPts)}" fill="none" stroke="#FFDE14" stroke-width="3" stroke-linejoin="round"/>`+dayPts.map(p=>`<circle cx="${x(p.h)}" cy="${y(p.v)}" r="${p.ts===L.ts?6:CHECK.has(p.h)?4.5:2.5}" fill="${p.ts===L.ts?'#EFFF04':'#FFDE14'}" stroke="#121212" stroke-width="${p.ts===L.ts?2:0}"/>`).join(''):'';
+  const sp=dayPts.find(p=>p.ts===L.ts);
+  const lab=sh.day&&sp?`<text x="${Math.min(x(sp.h)+10,W-pr-50)}" y="${Math.max(y(sp.v)-10,pt+10)}" fill="#EFFF04" font-family="Inter Tight, Arial, sans-serif" font-size="13" font-weight="700">${M.f(sp.v)}</text>`:'';
+  const guide=S.hover!=null?`<line x1="${x(S.hover)}" x2="${x(S.hover)}" y1="${pt}" y2="${Ht-pb}" stroke="#FFFFFF" stroke-opacity=".5"/>`:'';
+  $('chart').innerHTML=`<svg id="svg" viewBox="0 0 ${W} ${Ht}" tabindex="0" role="img" aria-label="${M.lab} by hour on ${fmtDay.format(new Date(L.ts))}, against the 7-day average">${g}${band}${avg}${lw}${dl}${guide}${lab}<rect x="${pl}" y="${pt}" width="${W-pl-pr}" height="${Ht-pt-pb}" fill="transparent"/></svg>`;
+  G={W,Ht,pl,pr,x,y,st,dayPts,lwPts,M,ld};
+  $('toggles').innerHTML=[['day','Selected day','#FFDE14'],['avg','7-day average','#CCCCCC'],['band','7-day range','rgba(255,222,20,.35)'],['lw','Same day last week','#43D5B0']].map(([key,t,c])=>`<button class="pill${sh[key]?' on':''}" data-s="${key}" aria-pressed="${sh[key]}"><i style="background:${c}"></i>${t}</button>`).join('');
+  renderTip();
+}
+function renderTip(){
+  const tip=$('tip');if(!G||S.hover==null){tip.hidden=true;return}
+  const h=S.hover,M=G.M,box=$('chartBox').getBoundingClientRect(),svg=$('svg').getBoundingClientRect(),sc=svg.width/G.W;
+  const d=G.dayPts.find(p=>p.h===h),s=G.st.find(p=>p.h===h),w=G.lwPts.find(p=>p.h===h);
+  const row=(c,t,v)=>`<div class="r"><span><i style="background:${c}"></i>${t}</span><strong>${v}</strong></div>`;
+  let html=`<b>${hl(h)} PT</b>`;
+  if(S.show.day)html+=row('#FFDE14','Selected day',d?M.f(d.v):'n/a');
+  if(S.show.avg)html+=row('#CCCCCC','7-day average',s?M.f(s.avg):'n/a');
+  if(S.show.band&&s)html+=row('rgba(255,222,20,.5)','7-day range',`${M.f(s.min)} to ${M.f(s.max)}`);
+  if(S.show.lw)html+=row('#43D5B0','Last week',w?M.f(w.v):'n/a');
+  if(d&&s&&s.avg){const diff=k=>S.metric==='openPct'?((d.v-s.avg)*100).toFixed(1)+' pts':Math.round((d.v/s.avg-1)*100)+'%';html+=`<div class="r"><span>vs average</span><strong>${(d.v>=s.avg?'+':'')+diff()}</strong></div>`}
+  if(d&&CHECK.has(h))html+=`<div class="hint">Click to open this update</div>`;
+  tip.innerHTML=html;tip.hidden=false;
+  const px=(svg.left-box.left)+G.x(h)*sc,tw=tip.offsetWidth;
+  tip.style.left=Math.max(0,Math.min(px+12+tw>box.width?px-12-tw:px+12,box.width-tw))+'px';
+  tip.style.top='8px';
+}
+function hourFromEvent(e){const svg=$('svg');if(!svg||!G)return null;const r=svg.getBoundingClientRect(),vx=(e.clientX-r.left)/r.width*G.W;const h=Math.round(3+(vx-G.pl)/(G.W-G.pl-G.pr)*18);return Math.max(3,Math.min(21,h))}
+
+function renderWatch(L){
+  const run0=runFor(L.ts),meta=isLatest(L)&&S.meta&&Math.abs((S.meta.ts||0)-L.ts)<36e5?S.meta:null;
+  const run=run0&&run0.sites?run0:(meta||run0);
+  const sites=(run&&run.sites&&run.sites.length)?run.sites:(run0?deriveWatch(run0):[]);
+  $('watch').innerHTML=sites.length?sites.map(s=>`<li class="${s.flag?'flag':''}"><span class="n">${esc(s.n)}</span><span class="m">${s.open}</span><span class="s">${money(s.val)} open · ${s.declToday} declines today · ${pct(s.declRate)} decline rate MTD${s.note?' · '+esc(s.note):''}</span></li>`).join(''):`<li class="none">No store detail was saved for this update.</li>`;
+  const ob=run?(Array.isArray(run.observations)&&run.observations.length?run.observations:[run.what,run.sowhat,run.next].filter(Boolean)):[];
+  $('obs').innerHTML=ob.length?ob.slice(0,3).map((t,i)=>`<div><h3>Observation ${i+1}</h3><p>${esc(t)}</p></div>`).join(''):'<p class="obsnone">No observations were written for this update. Observations start from the 12pm update on 3 Nov 2026.</p>';
+  $('obssec').hidden=false;$('mid').hidden=false;
+}
+
+function renderLog(L){
+  const R=S.rows,days=[...new Set(R.map(r=>dayOf(r.ts)))].slice(-10).reverse();
+  const avgOf=(h,k)=>mean(R.filter(r=>hourOf(r.ts)===h).map(r=>r[k]).filter(v=>v!=null));
+  let tr='';
+  days.forEach(d=>[17,12,9].forEach(h=>{
+    const r=R.find(q=>dayOf(q.ts)===d&&hourOf(q.ts)===h);if(!r)return;
+    const cls=k=>{const a=avgOf(h,k);return a==null||r[k]==null?'':r[k]>a*1.15?'hi':r[k]<a*.85?'lo':''};
+    tr+=`<tr data-ts="${r.ts}" class="${r.ts===L.ts?'sel':''}" tabindex="0"><td>${fmtDay.format(new Date(r.ts))}</td><td>${hl(h)}</td><td class="${cls('open')}">${int(r.open)}</td><td class="${cls('openPct')}">${r.openPct!=null?pct(r.openPct):'–'}</td><td>${money(r.val)}</td><td class="${cls('gt3')}">${r.gt3}</td><td>${r.hold}</td><td>${pct(r.otToday)}</td><td class="${cls('declToday')}">${r.declToday}</td><td>${pct(r.declRate)}</td></tr>`;
+  }));
+  $('log').innerHTML=tr;$('logsec').hidden=false;
+}
+
+// ---------- stores ----------
+const WH=new Set(['Coquitlam','Flint']);
+const REGS=['BC','Prairies','ON','QC and Atlantic'];
+const REGLAB={'BC':'BC','Prairies':'Prairies','ON':'Ontario','QC and Atlantic':'QC & Atlantic'};
+const isStore=n=>!WH.has(n);
+const shortName=n=>n.replace(/^\d+-/,'').replace(/^JD Sports /,'').replace(/ Shopping Centre$/,'');
+const regionOf=n=>{const c=n.split('-')[0],i=S.stores[c];return i?i.region:(WH.has(n)?'Warehouse':null)};
+// allSites row: [name, open, val, declToday, declRateMTD, otToday, shipToday, gt3, hold]
+const SI={n:0,open:1,val:2,decl:3,rate:4,ot:5,ship:6,gt3:7,hold:8};
+function runFor(ts){let best=null,bd=40*60e3;for(const r of S.runList){const d=Math.abs(r.ts-ts);if(d<=bd){bd=d;best=r}}return best}
+function runsUpTo(ts){return S.runList.filter(r=>r.allSites&&r.ts<=ts+40*60e3)}
+function flagWhy(r){if(!isStore(r[0]))return null;const w=[];if(r[1]>=25)w.push(r[1]+' open');if(r[3]>=8)w.push(r[3]+' declines');if(r[6]===0&&r[1]>=10)w.push('0 shipped with '+r[1]+' open');return w.length?w:null}
+function deriveWatch(run){
+  if(!run||!run.allSites)return[];
+  const A=run.allSites,seen=new Set(),out=[];
+  const push=(r,flag)=>{if(seen.has(r[0])||out.length>=12)return;seen.add(r[0]);const w=flagWhy(r);out.push({n:r[0],open:r[1],val:r[2],declToday:r[3],declRate:r[4],flag:!!w,note:[`${r[1]} open`,`${r[6]} shipped today`,r[7]?`${r[7]} aged over 3 days`:null,w?'flag: '+w.join(', '):null].filter(Boolean).join(', ')})};
+  [...A].sort((a,b)=>b[1]-a[1]).slice(0,3).forEach(r=>push(r));
+  A.filter(r=>flagWhy(r)).sort((a,b)=>b[1]-a[1]).forEach(r=>push(r));
+  [...A].filter(r=>isStore(r[0])&&r[3]>0).sort((a,b)=>b[3]-a[3]).slice(0,3).forEach(r=>push(r));
+  return out;
+}
+function sparkSvg(vals,w=90,h=24,hi){
+  const v=vals.filter(x=>x!=null);if(v.length<2)return '';
+  const mx=Math.max(...v,1),step=w/(vals.length-1);
+  const pts=vals.map((x,i)=>x==null?null:[i*step,h-2-(x/mx)*(h-4)]).filter(Boolean);
+  const last=pts[pts.length-1];
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><path d="M${pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join('L')}" fill="none" stroke="${hi?'#FFDE14':'#6F6F6F'}" stroke-width="1.5"/><circle cx="${last[0]}" cy="${last[1]}" r="2.5" fill="${hi?'#EFFF04':'#CCCCCC'}"/></svg>`;
+}
+const runLab=ts=>fmtDay.format(new Date(ts))+' '+hl(hourOf(ts));
+
+function renderStores(L){
+  const hist=runsUpTo(L.ts);
+  if(!hist.length){$('storesec').hidden=true;return}
+  $('storesec').hidden=false;
+  const cur=hist[hist.length-1],t=S.st.tab;
+  $('stabs').querySelectorAll('[data-t]').forEach(b=>{const on=b.dataset.t===t;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
+  ['rank','trend','offs','regions'].forEach(k=>$('sv-'+k).hidden=k!==t);
+  const stale=Math.abs(cur.ts-L.ts)>40*60e3?` (latest store detail on file: ${runLab(cur.ts)} PT)`:'';
+  if(t==='rank')renderRank(cur,hist,stale);
+  else if(t==='trend')renderTrend(hist);
+  else if(t==='offs')renderOffs(L,hist);
+  else renderRegions(cur,hist,stale);
+}
+
+function renderRank(cur,hist,stale){
+  $('regPills').innerHTML=['All',...REGS,'Warehouse'].map(r=>`<button class="pill${S.st.reg===r?' on':''}" data-r="${r}">${r==='All'?'All sites':r==='Warehouse'?'Warehouses':REGLAB[r]}</button>`).join('');
+  const prev=hist.length>1?hist[hist.length-2]:null,pm=new Map(prev?prev.allSites.map(r=>[r[0],r]):[]);
+  const last21=hist.slice(-21);
+  let rows=cur.allSites.filter(r=>S.st.reg==='All'||regionOf(r[0])===S.st.reg);
+  const cols=[['n','Site'],['open','Open'],['chg','Change'],['val','Value'],['gt3','>3 days'],['ship','Shipped today'],['decl','Declines today'],['rate','Decline rate MTD'],['ot','On-time today'],['trend','Open, last 7 days']];
+  const key=S.st.sort,dir=S.st.dir;
+  const val=(r,k)=>k==='n'?shortName(r[0]):k==='chg'?(pm.has(r[0])?r[1]-pm.get(r[0])[1]:0):r[SI[k]]??-1;
+  if(key!=='trend')rows=[...rows].sort((a,b)=>{const x=val(a,key),y=val(b,key);return (typeof x==='string'?x.localeCompare(y):x-y)*dir});
+  const th=$('rankTbl').querySelector('thead tr');
+  th.innerHTML=cols.map(([k,l])=>`<th data-k="${k}" class="${k===key?'on':''}" aria-sort="${k===key?(dir>0?'ascending':'descending'):'none'}">${l}${k===key?(dir>0?' ▲':' ▼'):''}</th>`).join('');
+  $('rankTbl').querySelector('tbody').innerHTML=rows.map(r=>{
+    const p=pm.get(r[0]),d=p?r[1]-p[1]:null,w=flagWhy(r);
+    const sp=sparkSvg(last21.map(h=>{const x=h.allSites.find(q=>q[0]===r[0]);return x?x[1]:null}),90,24,!!w);
+    return `<tr data-s="${esc(r[0])}" class="${w?'flag':''}" tabindex="0"><td class="nm">${esc(shortName(r[0]))}<span class="rg">${esc(r[0].split('-')[0])} · ${esc(REGLAB[regionOf(r[0])]||regionOf(r[0])||'')}</span></td><td>${r[1]}</td><td>${d==null||d===0?'<span class="dlt">0</span>':`<span class="dlt ${d>0?'up':'dn'}">${d>0?'+':''}${d}</span>`}</td><td>${money(r[2])}</td><td>${r[7]}</td><td>${r[6]}</td><td>${r[3]}</td><td>${pct(r[4])}</td><td>${r[5]==null||r[6]===0?'–':pct(r[5])}</td><td>${sp}</td></tr>`}).join('');
+  $('rankSub').textContent=`${rows.length} sites at ${runLab(cur.ts)} PT${stale}. Change is open orders vs the previous update${prev?` (${runLab(prev.ts)})`:''}. Red edge = flagged (25+ open, 8+ declines, or 10+ open with nothing shipped today). Click a row for its trend.`;
+}
+
+const TM={open:['Open orders',1,int],gt3:['Aged over 3 days',7,int],decl:['Declines today',3,int],ship:['Shipped today',6,int],rate:['Decline rate MTD',4,pct]};
+let TG=null;
+function renderTrend(hist){
+  const names=[...new Set(hist.flatMap(h=>h.allSites.map(r=>r[0])))].sort((a,b)=>isStore(a)-isStore(b)||a.localeCompare(b));
+  if(!S.st.store||!names.includes(S.st.store)){const c=hist[hist.length-1].allSites.filter(r=>isStore(r[0])).sort((a,b)=>b[1]-a[1])[0];S.st.store=c?c[0]:names[0]}
+  $('storeSel').innerHTML=names.map(n=>`<option value="${esc(n)}"${n===S.st.store?' selected':''}>${esc(isStore(n)?shortName(n)+' ('+n.split('-')[0]+')':n+' warehouse')}</option>`).join('');
+  $('tMetrics').innerHTML=Object.entries(TM).map(([k,m])=>`<button class="pill${k===S.st.tm?' on':''}" data-tm="${k}">${m[0]}</button>`).join('');
+  const [lab,ix,f]=TM[S.st.tm],H=hist.slice(-30);
+  const pts=H.map((h,i)=>{const r=h.allSites.find(q=>q[0]===S.st.store);return {i,ts:h.ts,v:r?r[ix]:null,flag:r?!!flagWhy(r):false,row:r}});
+  const avg=H.map(h=>{const v=h.allSites.filter(r=>isStore(r[0])).map(r=>r[ix]);return mean(v)});
+  const W=760,Ht=260,pl=52,pr=16,pt=16,pb=40,n=Math.max(H.length-1,1);
+  const vals=[...pts.map(p=>p.v).filter(v=>v!=null),...avg.filter(v=>v!=null)];
+  const vmax=Math.max(...vals,S.st.tm==='rate'?0.05:5),step=niceStep(vmax),ymax=Math.ceil(vmax/step)*step;
+  const x=i=>pl+i/n*(W-pl-pr),y=v=>pt+(1-v/ymax)*(Ht-pt-pb);
+  const ax='font-family="Inter Tight, Arial, sans-serif" font-size="11" fill="#8A8B8C"';
+  let g='';for(let v=0;v<=ymax+1e-9;v+=step)g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="#2E2E2E" stroke-dasharray="3 3"/><text x="${pl-6}" y="${y(v)+4}" text-anchor="end" ${ax}>${f(v)}</text>`;
+  let lastDay='';H.forEach((h,i)=>{const d=dayOf(h.ts);if(d!==lastDay){lastDay=d;g+=`<line x1="${x(i)}" x2="${x(i)}" y1="${pt}" y2="${Ht-pb}" stroke="#242424"/><text x="${x(i)+3}" y="${Ht-22}" ${ax}>${fmtDay.format(new Date(h.ts)).replace(/^\w+, /,'')}</text>`}});
+  g+=`<text x="${pl}" y="${Ht-6}" ${ax}>Each point is a 9am, 12pm or 5pm update</text>`;
+  const seg=pts.filter(p=>p.v!=null);
+  const line=seg.length?`<path d="M${seg.map(p=>x(p.i).toFixed(1)+','+y(p.v).toFixed(1)).join('L')}" fill="none" stroke="#FFDE14" stroke-width="2.5" stroke-linejoin="round"/>`:'';
+  const av=`<path d="M${avg.map((v,i)=>v==null?'':x(i).toFixed(1)+','+y(v).toFixed(1)).filter(Boolean).join('L')}" fill="none" stroke="#CCCCCC" stroke-width="1.25" stroke-dasharray="4 4"/>`;
+  const dots=seg.map(p=>`<circle cx="${x(p.i)}" cy="${y(p.v)}" r="${p.flag?4.5:3}" fill="${p.flag?'#FF5A4F':'#FFDE14'}"/>`).join('');
+  const guide=S.st.hover!=null?`<line x1="${x(S.st.hover)}" x2="${x(S.st.hover)}" y1="${pt}" y2="${Ht-pb}" stroke="#fff" stroke-opacity=".5"/>`:'';
+  $('trendChart').innerHTML=`<svg id="tsvg" viewBox="0 0 ${W} ${Ht}" tabindex="0" role="img" aria-label="${esc(lab)} for ${esc(S.st.store)} over recent updates">${g}${av}${line}${dots}${guide}<rect x="${pl}" y="${pt}" width="${W-pl-pr}" height="${Ht-pt-pb}" fill="transparent"/></svg>`;
+  TG={W,pl,pr,n,x,pts,avg,f,lab};
+  const flagged=pts.filter(p=>p.flag).length,withV=seg.length;
+  $('trendSub').innerHTML=`<span style="color:#FFDE14">━</span> ${esc(isStore(S.st.store)?shortName(S.st.store):S.st.store)} &nbsp; <span style="color:#CCCCCC">┅</span> average store &nbsp; <span style="color:#FF5A4F">●</span> flagged. Flagged at ${flagged} of ${withV} updates since ${H.length?runLab(H[0].ts):''}.`;
+  renderTTip();
+}
+function renderTTip(){
+  const tip=$('ttip');if(!TG||S.st.hover==null){tip.hidden=true;return}
+  const i=S.st.hover,p=TG.pts[i];if(!p){tip.hidden=true;return}
+  const r=p.row,box=$('trendBox').getBoundingClientRect(),svg=$('tsvg').getBoundingClientRect(),sc=svg.width/TG.W;
+  let html=`<b>${runLab(p.ts)} PT</b><div class="r"><span>${esc(TG.lab)}</span><strong>${p.v==null?'n/a':TG.f(p.v)}</strong></div><div class="r"><span>Average store</span><strong>${TG.avg[i]==null?'n/a':TG.f(TG.avg[i])}</strong></div>`;
+  if(r)html+=`<div class="r"><span>Open · aged · shipped</span><strong>${r[1]} · ${r[7]} · ${r[6]}</strong></div><div class="r"><span>Declines today</span><strong>${r[3]}</strong></div>`;
+  const w=r&&flagWhy(r);if(w)html+=`<div class="hint" style="color:#FF5A4F">Flagged: ${esc(w.join(', '))}</div>`;
+  tip.innerHTML=html;tip.hidden=false;
+  const px=(svg.left-box.left)+TG.x(i)*sc,tw=tip.offsetWidth;
+  tip.style.left=Math.max(0,Math.min(px+12+tw>box.width?px-12-tw:px+12,box.width-tw))+'px';tip.style.top='8px';
+}
+
+function renderOffs(L,hist){
+  const from=L.ts-7*864e5,H=hist.filter(h=>h.ts>from);
+  const tally=new Map();
+  H.forEach((h,i)=>h.allSites.forEach(r=>{if(!isStore(r[0]))return;const t=tally.get(r[0])||{n:r[0],c:0,why:{},marks:new Array(H.length).fill(false)};const w=flagWhy(r);if(w){t.c++;t.marks[i]=true;w.forEach(x=>{const k=/declines/.test(x)?'8+ declines':/shipped/.test(x)?'nothing shipped':'25+ open';t.why[k]=(t.why[k]||0)+1})}tally.set(r[0],t)}));
+  const list=[...tally.values()].filter(t=>t.c>0).sort((a,b)=>b.c-a.c||a.n.localeCompare(b.n));
+  const dayStart=H.map((h,i)=>i>0&&dayOf(h.ts)!==dayOf(H[i-1].ts));
+  $('offsSub').textContent=`${list.length} stores flagged at least once in the ${H.length} updates since ${H.length?runLab(H[0].ts):''} PT. One dot per update, red when flagged. Click a store for its trend.`;
+  const shown=S.st.allOffs?list:list.slice(0,15);
+  $('offs').innerHTML=list.length?shown.map(t=>{const top=Object.entries(t.why).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${k.trim()} ×${v}`).join(', ');
+    return `<li data-s="${esc(t.n)}" tabindex="0"><span class="n">${esc(shortName(t.n))}<small>${esc(REGLAB[regionOf(t.n)]||'')} · ${esc(top)}</small></span><span class="c">${t.c}<small>of ${H.length}</small></span><span class="dots">${t.marks.map((m,i)=>`<i class="${m?'on':''}${dayStart[i]?' day':''}" title="${runLab(H[i].ts)}"></i>`).join('')}</span></li>`}).join('')+(list.length>15?`<li class="more"><button class="pill" id="offsMore">${S.st.allOffs?'Show top 15':'Show all '+list.length}</button></li>`:''):'<li>No store was flagged in the last 7 days.</li>';
+}
+
+function renderRegions(cur,hist,stale){
+  const last21=hist.slice(-21);
+  const R=cur.regions||[];
+  $('regSub').textContent=`Regional totals from the snapshot's own region rows at ${runLab(cur.ts)} PT${stale}. Trend line is open orders over the last 7 days of updates.`;
+  $('regs').innerHTML=REGS.map(name=>{
+    const r=R.find(q=>q[0]===name);if(!r)return '';
+    const stores=cur.allSites.filter(s=>regionOf(s[0])===name);
+    const flagged=stores.filter(s=>flagWhy(s)).length;
+    const top=[...stores].sort((a,b)=>b[1]-a[1]).slice(0,3).map(s=>`${shortName(s[0])} ${s[1]}`).join(' · ');
+    const sp=sparkSvg(last21.map(h=>{const x=(h.regions||[]).find(q=>q[0]===name);return x?x[1]:null}),200,36,true);
+    return `<div class="reg"><span class="lab">${stores.length} sites · ${flagged} flagged</span><h3>${REGLAB[name]}</h3><span class="big">${r[1]}</span><span class="lab">open orders · ${money(r[2])}</span>${sp}<div class="kv"><span>Aged over 3 days</span><b>${r[7]}</b><span>Shipped today</span><b>${r[6]}</b><span>Declines today</span><b>${r[3]}</b><span>Decline rate MTD</span><b>${pct(r[4])}</b><span>On-time today</span><b>${r[5]==null?'–':pct(r[5])}</b></div><span class="top">Most open: ${esc(top)}</span></div>`}).join('');
+}
+
+function renderAll(){
+  if(!S.rows.length){$('empty').hidden=false;$('stamp').innerHTML='Open order snapshot · <b>Waiting for data</b>';return}
+  $('empty').hidden=true;
+  const L=selRow();
+  $('stamp').innerHTML=(isLatest(L)?'Latest update':'Viewing update')+' · <b>'+fmtLong.format(new Date(L.ts))+' PT</b>';
+  renderPicker(L);renderKpis(L);renderChart(L);renderWatch(L);renderStores(L);renderLog(L);
+}
+
+// events
+$('hours').addEventListener('click',e=>{const b=e.target.closest('[data-ts]');if(b)select(+b.dataset.ts)});
+$('daySel').addEventListener('change',e=>{const d=e.target.value,L=selRow(),h=hourOf(L.ts),dr=checks().filter(r=>dayOf(r.ts)===d);const m=dr.find(r=>hourOf(r.ts)===h)||dr[dr.length-1];if(m)select(m.ts)});
+$('prev').addEventListener('click',()=>{const C=checks(),i=C.indexOf(selRow());if(i>0)select(C[i-1].ts)});
+$('next').addEventListener('click',()=>{const C=checks(),i=C.indexOf(selRow());if(i<C.length-1)select(C[i+1].ts)});
+$('latest').addEventListener('click',()=>select(null));
+$('metrics').addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(b){S.metric=b.dataset.m;renderChart(selRow())}});
+$('toggles').addEventListener('click',e=>{const b=e.target.closest('[data-s]');if(b){S.show[b.dataset.s]=!S.show[b.dataset.s];renderChart(selRow())}});
+$('log').addEventListener('click',e=>{const r=e.target.closest('[data-ts]');if(r){select(+r.dataset.ts);window.scrollTo({top:0,behavior:'smooth'})}});
+$('log').addEventListener('keydown',e=>{if(e.key==='Enter'){const r=e.target.closest('[data-ts]');if(r)select(+r.dataset.ts)}});
+const box=$('chartBox');
+box.addEventListener('pointermove',e=>{const h=hourFromEvent(e);if(h!=null&&h!==S.hover){S.hover=h;renderChart(selRow())}});
+box.addEventListener('pointerleave',()=>{if(S.hover!=null){S.hover=null;renderChart(selRow())}});
+box.addEventListener('click',e=>{const h=hourFromEvent(e);if(h==null||!G||!CHECK.has(h))return;const p=G.dayPts.find(q=>q.h===h);if(p)select(p.ts)});
+box.addEventListener('keydown',e=>{if(!G)return;if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();const cur=S.hover??hourOf(selRow().ts);S.hover=Math.max(3,Math.min(21,cur+(e.key==='ArrowLeft'?-1:1)));renderChart(selRow());$('svg').focus()}else if(e.key==='Enter'&&S.hover!=null){const p=CHECK.has(S.hover)&&G.dayPts.find(q=>q.h===S.hover);if(p){select(p.ts);$('svg').focus()}}else if(e.key==='Escape'){S.hover=null;renderChart(selRow())}});
+$('stabs').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(b){S.st.tab=b.dataset.t;S.st.hover=null;renderStores(selRow())}});
+$('regPills').addEventListener('click',e=>{const b=e.target.closest('[data-r]');if(b){S.st.reg=b.dataset.r;renderStores(selRow())}});
+$('rankTbl').addEventListener('click',e=>{const h=e.target.closest('th[data-k]');if(h){const k=h.dataset.k;if(k==='trend')return;if(S.st.sort===k)S.st.dir*=-1;else{S.st.sort=k;S.st.dir=k==='n'?1:-1}renderStores(selRow());return}const r=e.target.closest('tr[data-s]');if(r){S.st.store=r.dataset.s;S.st.tab='trend';renderStores(selRow())}});
+$('rankTbl').addEventListener('keydown',e=>{if(e.key==='Enter'){const r=e.target.closest('tr[data-s]');if(r){S.st.store=r.dataset.s;S.st.tab='trend';renderStores(selRow())}}});
+$('offs').addEventListener('click',e=>{if(e.target.closest('#offsMore')){S.st.allOffs=!S.st.allOffs;renderStores(selRow());return}const r=e.target.closest('[data-s]');if(r){S.st.store=r.dataset.s;S.st.tab='trend';renderStores(selRow())}});
+$('storeSel').addEventListener('change',e=>{S.st.store=e.target.value;renderStores(selRow())});
+$('tMetrics').addEventListener('click',e=>{const b=e.target.closest('[data-tm]');if(b){S.st.tm=b.dataset.tm;renderStores(selRow())}});
+const tbox=$('trendBox');
+const tIdx=e=>{const s=$('tsvg');if(!s||!TG)return null;const r=s.getBoundingClientRect(),vx=(e.clientX-r.left)/r.width*TG.W;return Math.max(0,Math.min(TG.n,Math.round((vx-TG.pl)/(TG.W-TG.pl-TG.pr)*TG.n)))};
+tbox.addEventListener('pointermove',e=>{const i=tIdx(e);if(i!=null&&i!==S.st.hover){S.st.hover=i;renderTrend(runsUpTo(selRow().ts))}});
+tbox.addEventListener('pointerleave',()=>{if(S.st.hover!=null){S.st.hover=null;renderTrend(runsUpTo(selRow().ts))}});
+tbox.addEventListener('keydown',e=>{if(!TG)return;if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();S.st.hover=Math.max(0,Math.min(TG.n,(S.st.hover??TG.n)+(e.key==='ArrowLeft'?-1:1)));renderTrend(runsUpTo(selRow().ts));$('tsvg').focus()}});
+window.addEventListener('resize',()=>{renderTip();renderTTip()});
+
+(async()=>{
+  const db=window.claude&&await claude.use('db');
+  if(!db){$('empty').hidden=false;$('empty').textContent='Sign in to claude.ai to load the snapshot log.';$('stamp').innerHTML='Open order snapshot · <b>Offline</b>';return}
+  db.collection('snapshots').orderBy('ts','desc').limit(1000).onSnapshot(s=>{S.rows=s.docs.map(d=>d.data()).filter(r=>r&&r.ts&&r.open!=null).sort((a,b)=>a.ts-b.ts);renderAll()},e=>console.error(e));
+  db.doc('meta/stores').onSnapshot(s=>{S.stores=s.exists?(s.data().info||{}):{};if(S.rows.length)renderAll()},e=>console.error(e));
+  db.doc('meta/latest').onSnapshot(s=>{S.meta=s.exists?s.data():null;if(S.rows.length)renderAll()},e=>console.error(e));
+  db.collection('runs').limit(1000).onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());S.runs=m;S.runList=Object.values(m).filter(r=>r&&r.ts).sort((a,b)=>a.ts-b.ts);if(S.rows.length)renderAll()},e=>console.error(e));
+})();
+</script>
