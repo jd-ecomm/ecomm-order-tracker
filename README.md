@@ -21,7 +21,7 @@ Each run:
 
 ## Tracker page (`index.html`)
 
-JD brand baseline v2: Forever Forward Sans Headline display (`fonts/`), Inter Tight body, JD Yellow #FFDE14, dark mode, Roundel flush right.
+JD brand baseline v2: Forever Forward Sans Headline display (`ForeverForwardSans-Headline.woff2`), Inter Tight body, JD Yellow #FFDE14, dark mode, Roundel flush right.
 
 - **Picker:** day plus 9am / 12pm / 5pm, with previous / next / latest. KPIs and "usual" are recalculated as of the update you pick.
 - **Observations 1 to 3** for the update.
@@ -44,7 +44,7 @@ The page reads its data through the artifact runtime (`claude.use('db')`), so op
 | Path | Purpose |
 | --- | --- |
 | `index.html` | Tracker page source |
-| `fonts/ForeverForwardSans-Headline.woff2` | JD display font used by the page |
+| `ForeverForwardSans-Headline.woff2` | JD display font used by the page (the page also looks in `fonts/`) |
 | `baseline.py` | "Usual": same PT hour over the last 7 days, scaled by a learned weekday factor. The page runs an identical JavaScript port. |
 | `openpct.py` | Open % of 24h orders = open ÷ (open + shipped in last 24h + declined in last 24h) |
 | `data/snapshots.csv` | Every logged hourly company snapshot (export of the `snapshots` collection) |
