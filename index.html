@@ -53,7 +53,8 @@ select.pill{appearance:none;padding-right:28px;background-image:linear-gradient(
 .histnote{font-size:12px;color:var(--jd-yellow);font-weight:600}
 
 /* KPI cards */
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+@media (max-width:1000px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .kpi{background:var(--s1);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .kpi .val{font-family:var(--display);font-size:52px;line-height:.85;letter-spacing:-0.01em;font-variant-numeric:tabular-nums;margin-top:4px}
 .kpi .base{font-size:11.5px;color:var(--fg2);font-variant-numeric:tabular-nums}
@@ -90,6 +91,13 @@ select.pill{appearance:none;padding-right:28px;background-image:linear-gradient(
 .watch .m{font-family:var(--display);font-size:26px;line-height:.85;text-align:right;font-variant-numeric:tabular-nums}
 .watch .s{grid-column:1/-1;font-size:12px;color:var(--fg3)}
 .watch .none{color:var(--fg3);font-size:12.5px;padding:10px 0;border:0}
+.wpanel{display:flex;flex-direction:column}
+.wpanel .whead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.wpanel .wcount{font-size:11.5px;color:var(--fg3)}
+.wscroll{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--line2) transparent;margin-right:-8px;padding-right:8px;-webkit-mask-image:linear-gradient(#000 calc(100% - 28px),transparent);mask-image:linear-gradient(#000 calc(100% - 28px),transparent)}
+.wscroll.end{-webkit-mask-image:none;mask-image:none}
+@media (min-width:861px){.grid2{align-items:stretch}.wpanel{contain:size}}
+@media (max-width:860px){.wscroll{max-height:460px}}
 
 .tblwrap{border:1px solid var(--line);border-radius:14px;overflow:auto;max-height:560px}
 table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:12.5px;min-width:680px}
@@ -120,6 +128,9 @@ td.hi{color:var(--alert);font-weight:600} td.lo{color:var(--teal);font-weight:60
 #rankTbl th{cursor:pointer;user-select:none;white-space:nowrap}
 #rankTbl th.on{color:var(--jd-yellow)}
 #rankTbl td.nm{font-weight:600;white-space:nowrap}
+#rankTbl td.rk{font-weight:700;white-space:nowrap}
+#rankTbl td.rk small{display:block;font-weight:500;font-size:11px;color:var(--fg3)}
+#rankTbl td.rk.top{color:var(--teal)} #rankTbl td.rk.bot{color:var(--alert)}
 #rankTbl td .rg{display:block;font-weight:500;font-size:11px;color:var(--fg3)}
 #rankTbl tr.flag td:first-child{box-shadow:inset 3px 0 0 var(--alert)}
 .spark{display:block}
@@ -195,9 +206,9 @@ td.hi{color:var(--alert);font-weight:600} td.lo{color:var(--teal);font-weight:60
       <div class="toggles" id="toggles" role="group" aria-label="Chart series"></div>
       <p class="cnote">Hover or tap the chart to compare an hour. Click any hour to open it (from 6 Nov every hour is a full update; before that, the dotted 9am, 12pm and 5pm points). Arrow keys work when the chart is focused.</p>
     </section>
-    <section class="panel">
-      <h2>Watch list</h2>
-      <ul class="watch" id="watch"></ul>
+    <section class="panel wpanel">
+      <div class="whead"><h2>Watch list</h2><span class="wcount" id="wcount"></span></div>
+      <div class="wscroll" id="wscroll"><ul class="watch" id="watch"></ul></div>
     </section>
   </div>
 
@@ -234,7 +245,7 @@ td.hi{color:var(--alert);font-weight:600} td.lo{color:var(--teal);font-weight:60
     <div class="tblwrap"><table><thead><tr><th>Day</th><th>Time</th><th>Open</th><th>Open %</th><th>Value</th><th>&gt;3 days</th><th>On hold</th><th>On-time today</th><th>Declines today</th><th>Decline rate MTD</th></tr></thead><tbody id="log"></tbody></table></div>
   </section>
 
-  <p class="foot">Updated every hour on weekdays, 9am to 5pm PT, as each hourly VCS_JDSF Open Order Snapshot arrives (sent at about :05 past each hour). Observations, the watch list and the Slack update come at 10am, 1pm and 5pm (9am, 12pm and 4pm before 6 Nov 2026; 5pm instead of 4pm before 3 Nov). Open % of 24h orders = open orders ÷ (open + orders shipped in the last 24 hours + orders declined in the last 24 hours). "Usual" is the same Pacific hour over the 7 days before the snapshot you are viewing, adjusted for the day of the week. Stat holidays are excluded. Declines and on-time reset daily. In the log, red cells are 15%+ above the average for that check time and teal cells 15%+ below. Click a row to open it.</p>
+  <p class="foot">Updated every hour on weekdays, 9am to 5pm PT, as each hourly VCS_JDSF Open Order Snapshot arrives (sent at about :05 past each hour). Observations, the watch list and the Slack update come at 10am, 1pm and 5pm (9am, 12pm and 4pm before 6 Nov 2026; 5pm instead of 4pm before 3 Nov). Open % of 24h orders = open orders ÷ (open + orders shipped in the last 24 hours + orders declined in the last 24 hours). "Usual" is the same Pacific hour over the 7 days before the snapshot you are viewing, adjusted for the day of the week. Stat holidays are excluded. Declines and on-time reset daily. Ops rank compares stores only (warehouses are not ranked), recalculated at every update, with five equal parts scored as a percentile against the other stores: open share, on-time shipping today (0% when a store holds orders but has shipped none, neutral when it has no orders), decline rate MTD, share of open orders aged over 3 days, and shipping volume (average shipped per day over the previous 7 days). The table still sorts by open orders unless you pick another column. In the log, red cells are 15%+ above the average for that check time and teal cells 15%+ below. Click a row to open it.</p>
 </div>
 
 <script>
@@ -325,6 +336,7 @@ function renderKpis(L){
     ['Open value',money(L.val),b('val'),L.val,'down',false,money],
     ['Aged over 3 days',L.gt3,b('gt3'),L.gt3,'down',false,int],
     ['On hold',L.hold,b('hold'),L.hold,'down',false,int],
+    ['Shipped today',L.shipToday!=null?int(L.shipToday):'n/a',b('shipToday'),L.shipToday,'up',false,int],
     ['On-time ship today',pct(L.otToday),b('otToday'),L.otToday,'up',true,pct],
     ['Declines today',L.declToday,b('declToday'),L.declToday,'down',false,int],
   ];
@@ -392,6 +404,7 @@ function renderWatch(L){
   const runX=runFor(L.ts),prior=runX?null:runBefore(L.ts),run0=runX||prior,meta=!prior&&isLatest(L)&&S.meta&&Math.abs((S.meta.ts||0)-L.ts)<36e5?S.meta:null;
   const run=run0&&run0.sites?run0:(meta||run0);
   const sites=(run&&run.sites&&run.sites.length)?run.sites:(run0?deriveWatch(run0):[]);
+  $('wcount').textContent=sites.length?sites.length+(sites.length===1?' site':' sites'):'';
   $('watch').innerHTML=sites.length?sites.map(s=>`<li class="${s.flag?'flag':''}"><span class="n">${esc(s.n)}</span><span class="m">${s.open}</span><span class="s">${money(s.val)} open · ${s.declToday} declines today · ${pct(s.declRate)} decline rate MTD${s.note?' · '+esc(s.note):''}</span></li>`).join(''):`<li class="none">No store detail was saved for this update.</li>`;
   const ob=run?(Array.isArray(run.observations)&&run.observations.length?run.observations:[run.what,run.sowhat,run.next].filter(Boolean)):[];
   $('obs').innerHTML=ob.length?ob.slice(0,3).map((t,i)=>`<div><h3>Observation ${i+1}</h3><p>${esc(t)}</p></div>`).join(''):'<p class="obsnone">No observations were written for this update. Observations start from the 12pm update on 3 Nov 2026.</p>';
@@ -399,7 +412,9 @@ function renderWatch(L){
   const oa=$('obsas');oa.hidden=!(run&&ob.length);if(run)oa.innerHTML=prior?`From the <b>${tm(run.ts)} PT</b> reading. This hour's observations and store detail are still being written.`:`Written from the <b>${tm(run.ts)} PT</b> reading.`;
   $('obs').classList.toggle('stale',!!prior);
   $('obssec').hidden=false;$('mid').hidden=false;
+  wEnd();
 }
+function wEnd(){const w=$('wscroll');w.classList.toggle('end',w.scrollTop+w.clientHeight>=w.scrollHeight-4)}
 
 function renderLog(L){
   const R=S.rows,days=[...new Set(R.map(r=>dayOf(r.ts)))].slice(-10).reverse();
@@ -426,6 +441,46 @@ function runBefore(ts){let best=null;for(const r of S.runList){if(r.ts<=ts&&dayO
 function runFor(ts){let best=null,bd=40*60e3;for(const r of S.runList){const d=Math.abs(r.ts-ts);if(d<=bd){bd=d;best=r}}return best}
 function runsUpTo(ts){return S.runList.filter(r=>r.allSites&&r.ts<=ts+40*60e3)}
 function flagWhy(r){if(!isStore(r[0]))return null;const w=[];if(r[1]>=25)w.push(r[1]+' open');if(r[3]>=8)w.push(r[3]+' declines');if(r[6]===0&&r[1]>=10)w.push('0 shipped with '+r[1]+' open');return w.length?w:null}
+// Operational rank (stores only). Four equal parts, each scored 0 to 100 as a percentile among stores at that update; 100 = best.
+// Open share = open ÷ (open + shipped today + declined today). On-time today: a store holding open orders with nothing shipped scores 0%; a store with no orders at all is neutral.
+// Small stores are pulled toward the all-store rate (10 pseudo-orders) so a store with 2 of 3 orders aged doesn't rank below one with 40 of 160.
+const SHR=10;
+const RANK_PARTS=[
+  ['Open share',(r,c)=>(r[1]+SHR*c.open)/(r[1]+r[6]+r[3]+SHR),-1,pct],
+  ['On-time today',r=>r[6]>0?(r[5]??0):r[1]>0?0:null,1,pct],
+  ['Decline rate MTD',r=>r[4],-1,pct],
+  ['Aged >3 days share',(r,c)=>(r[7]+SHR*c.aged)/(r[1]+SHR),-1,pct],
+  ['Shipping volume',(r,c)=>c.vol.has(r[0])?c.vol.get(r[0]):null,1,v=>v.toFixed(1)+'/day']];
+// Five parts at 20% each: volume rewards stores that ship more, so quiet stores don't top the table by default.
+const RANK_W=[.2,.2,.2,.2,.2];
+// Average orders shipped per day over the 7 completed days before this update (each day's last reading of shipped today).
+function volOf(run){
+  const d0=dayOf(run.ts),best=new Map();
+  S.runList.forEach(h=>{if(!h.allSites||h.ts>=run.ts||h.ts<run.ts-8*864e5)return;const d=dayOf(h.ts);if(d===d0)return;
+    h.allSites.forEach(r=>{const k=r[0]+'|'+d,b=best.get(k);if(!b||h.ts>b.ts)best.set(k,{ts:h.ts,v:r[6]})})});
+  const days=new Set([...best.keys()].map(k=>k.split('|')[1])),out=new Map();
+  if(!days.size)return out;
+  best.forEach((b,k)=>{const n=k.split('|')[0];out.set(n,(out.get(n)||0)+b.v)});
+  out.forEach((v,n)=>out.set(n,v/days.size));return out;
+}
+const RC=new WeakMap();
+function rankOf(run){
+  if(!run||!run.allSites)return new Map();
+  if(RC.has(run))return RC.get(run);
+  const st=run.allSites.filter(r=>isStore(r[0])),sc=new Map(st.map(r=>[r[0],{n:r[0],open:r[1],sum:0,parts:[]}]));
+  const tot=i=>st.reduce((a,r)=>a+r[i],0),O=tot(1),c={open:O/Math.max(1,O+tot(6)+tot(3)),aged:O?tot(7)/O:0,vol:volOf(run)};
+  RANK_PARTS.forEach(([,fn,dir],pi)=>{
+    const v=st.map(r=>[r[0],fn(r,c)]);
+    const ok=v.filter(([,x])=>x!=null&&isFinite(x));
+    v.forEach(([n,x])=>{const o=sc.get(n);let p=50;
+      if(x!=null&&isFinite(x)&&ok.length>1){let worse=0,eq=0;ok.forEach(([,y])=>{if(dir>0?y<x:y>x)worse++;else if(y===x)eq++});p=(worse+(eq-1)/2)/(ok.length-1)*100}
+      o.sum+=p*RANK_W[pi];o.parts[pi]={v:x,p}});
+  });
+  const list=[...sc.values()].map(o=>({...o,score:o.sum})).sort((a,b)=>b.score-a.score||a.open-b.open||a.n.localeCompare(b.n));
+  const m=new Map();list.forEach((o,i)=>m.set(o.n,{rank:i+1,N:list.length,score:o.score,parts:o.parts}));
+  RC.set(run,m);return m;
+}
+const rankTitle=k=>k?`Ops rank ${k.rank} of ${k.N} · score ${Math.round(k.score)}/100\n`+RANK_PARTS.map(([lab,,,f],i)=>{const q=k.parts[i];return `${lab}: ${q.v==null?'n/a (neutral)':f(q.v)} → ${Math.round(q.p)}`}).join('\n'):'';
 function deriveWatch(run){
   if(!run||!run.allSites)return[];
   const A=run.allSites,seen=new Set(),out=[];
@@ -458,58 +513,71 @@ function renderStores(L){
   else renderRegions(cur,hist,stale);
 }
 
+function rkCell(k,p){
+  if(!k)return '<td class="rk"><small>Warehouse</small></td>';
+  const mv=p?p.rank-k.rank:0,cls=k.rank<=5?'top':k.rank>k.N-5?'bot':'';
+  const arrow=mv?` <span class="dlt ${mv>0?'dn':'up'}">${mv>0?'▲':'▼'}${Math.abs(mv)}</span>`:'';
+  return `<td class="rk ${cls}" title="${esc(rankTitle(k))}">${k.rank}${arrow}<small>of ${k.N} · ${Math.round(k.score)}</small></td>`;
+}
 function renderRank(cur,hist,stale){
   $('regPills').innerHTML=['All',...REGS,'Warehouse'].map(r=>`<button class="pill${S.st.reg===r?' on':''}" data-r="${r}">${r==='All'?'All sites':r==='Warehouse'?'Warehouses':REGLAB[r]}</button>`).join('');
   const prev=hist.length>1?hist[hist.length-2]:null,pm=new Map(prev?prev.allSites.map(r=>[r[0],r]):[]);
   const last21=hist.slice(-21);
   let rows=cur.allSites.filter(r=>S.st.reg==='All'||regionOf(r[0])===S.st.reg);
-  const cols=[['n','Site'],['open','Open'],['chg','Change'],['val','Value'],['gt3','>3 days'],['ship','Shipped today'],['decl','Declines today'],['rate','Decline rate MTD'],['ot','On-time today'],['trend','Open, last 7 days']];
-  const key=S.st.sort,dir=S.st.dir;
-  const val=(r,k)=>k==='n'?shortName(r[0]):k==='chg'?(pm.has(r[0])?r[1]-pm.get(r[0])[1]:0):r[SI[k]]??-1;
-  if(key!=='trend')rows=[...rows].sort((a,b)=>{const x=val(a,key),y=val(b,key);return (typeof x==='string'?x.localeCompare(y):x-y)*dir});
+  const cols=[['n','Site'],['open','Open'],['chg','Change'],['val','Value'],['rank','Ops rank'],['gt3','>3 days'],['ship','Shipped today'],['decl','Declines today'],['rate','Decline rate MTD'],['ot','On-time today'],['trend','Open, last 7 days']];
+  const key=S.st.sort,dir=S.st.dir,RK=rankOf(cur),PRK=prev?rankOf(prev):new Map();
+  const val=(r,k)=>k==='n'?shortName(r[0]):k==='chg'?(pm.has(r[0])?r[1]-pm.get(r[0])[1]:0):k==='rank'?(RK.get(r[0])||{}).rank??null:r[SI[k]]??-1;
+  if(key!=='trend')rows=[...rows].sort((a,b)=>{const x=val(a,key),y=val(b,key);if(x==null||y==null)return (x==null)-(y==null);return (typeof x==='string'?x.localeCompare(y):x-y)*dir});
   const th=$('rankTbl').querySelector('thead tr');
   th.innerHTML=cols.map(([k,l])=>`<th data-k="${k}" class="${k===key?'on':''}" aria-sort="${k===key?(dir>0?'ascending':'descending'):'none'}">${l}${k===key?(dir>0?' ▲':' ▼'):''}</th>`).join('');
   $('rankTbl').querySelector('tbody').innerHTML=rows.map(r=>{
     const p=pm.get(r[0]),d=p?r[1]-p[1]:null,w=flagWhy(r);
     const sp=sparkSvg(last21.map(h=>{const x=h.allSites.find(q=>q[0]===r[0]);return x?x[1]:null}),90,24,!!w);
-    return `<tr data-s="${esc(r[0])}" class="${w?'flag':''}" tabindex="0"><td class="nm">${esc(shortName(r[0]))}<span class="rg">${esc(r[0].split('-')[0])} · ${esc(REGLAB[regionOf(r[0])]||regionOf(r[0])||'')}</span></td><td>${r[1]}</td><td>${d==null||d===0?'<span class="dlt">0</span>':`<span class="dlt ${d>0?'up':'dn'}">${d>0?'+':''}${d}</span>`}</td><td>${money(r[2])}</td><td>${r[7]}</td><td>${r[6]}</td><td>${r[3]}</td><td>${pct(r[4])}</td><td>${r[5]==null||r[6]===0?'–':pct(r[5])}</td><td>${sp}</td></tr>`}).join('');
-  $('rankSub').textContent=`${rows.length} sites at ${runLab(cur.ts)} PT${stale}. Change is open orders vs the previous update${prev?` (${runLab(prev.ts)})`:''}. Red edge = flagged (25+ open, 8+ declines, or 10+ open with nothing shipped today). Click a row for its trend.`;
+    return `<tr data-s="${esc(r[0])}" class="${w?'flag':''}" tabindex="0"><td class="nm">${esc(shortName(r[0]))}<span class="rg">${esc(r[0].split('-')[0])} · ${esc(REGLAB[regionOf(r[0])]||regionOf(r[0])||'')}</span></td><td>${r[1]}</td><td>${d==null||d===0?'<span class="dlt">0</span>':`<span class="dlt ${d>0?'up':'dn'}">${d>0?'+':''}${d}</span>`}</td><td>${money(r[2])}</td>${rkCell(RK.get(r[0]),PRK.get(r[0]))}<td>${r[7]}</td><td>${r[6]}</td><td>${r[3]}</td><td>${pct(r[4])}</td><td>${r[5]==null||r[6]===0?'–':pct(r[5])}</td><td>${sp}</td></tr>`}).join('');
+  $('rankSub').textContent=`${rows.length} sites at ${runLab(cur.ts)} PT${stale}. Change is open orders vs the previous update${prev?` (${runLab(prev.ts)})`:''}. Ops rank (1 = best of ${RK.size} stores) weighs five things equally, each against the other stores at this update: low open share (open ÷ open + shipped + declined today), high on-time shipping today (0% if it holds orders and has shipped none), low decline rate MTD a low share of open orders aged over 3 days, and higher shipping volume (average orders shipped per day over the previous 7 days, so busy stores get credit for the load they carry) (small stores are weighted toward the all-store rate so a handful of orders can't swing them). Arrows show the move since the previous update; hover a rank for its breakdown. Red edge = flagged (25+ open, 8+ declines, or 10+ open with nothing shipped today). Click a row for its trend.`;
 }
 
-const TM={open:['Open orders',1,int],gt3:['Aged over 3 days',7,int],decl:['Declines today',3,int],ship:['Shipped today',6,int],rate:['Decline rate MTD',4,pct]};
+const ordN=v=>'#'+Math.round(v);
+const TM={open:['Open orders',r=>r[1],int],rank:['Ops rank',(r,h)=>(rankOf(h).get(r[0])||{}).rank??null,ordN],gt3:['Aged over 3 days',r=>r[7],int],decl:['Declines today',r=>r[3],int],ship:['Shipped today',r=>r[6],int],rate:['Decline rate MTD',r=>r[4],pct]};
 let TG=null;
 function renderTrend(hist){
   const names=[...new Set(hist.flatMap(h=>h.allSites.map(r=>r[0])))].sort((a,b)=>isStore(a)-isStore(b)||a.localeCompare(b));
   if(!S.st.store||!names.includes(S.st.store)){const c=hist[hist.length-1].allSites.filter(r=>isStore(r[0])).sort((a,b)=>b[1]-a[1])[0];S.st.store=c?c[0]:names[0]}
   $('storeSel').innerHTML=names.map(n=>`<option value="${esc(n)}"${n===S.st.store?' selected':''}>${esc(isStore(n)?shortName(n)+' ('+n.split('-')[0]+')':n+' warehouse')}</option>`).join('');
   $('tMetrics').innerHTML=Object.entries(TM).map(([k,m])=>`<button class="pill${k===S.st.tm?' on':''}" data-tm="${k}">${m[0]}</button>`).join('');
-  const [lab,ix,f]=TM[S.st.tm],H=hist.slice(-30);
-  const pts=H.map((h,i)=>{const r=h.allSites.find(q=>q[0]===S.st.store);return {i,ts:h.ts,v:r?r[ix]:null,flag:r?!!flagWhy(r):false,row:r}});
-  const avg=H.map(h=>{const v=h.allSites.filter(r=>isStore(r[0])).map(r=>r[ix]);return mean(v)});
+  const [lab,get,f]=TM[S.st.tm],H=hist.slice(-30),inv=S.st.tm==='rank';
+  const pts=H.map((h,i)=>{const r=h.allSites.find(q=>q[0]===S.st.store);return {i,ts:h.ts,v:r?get(r,h):null,flag:r?!!flagWhy(r):false,row:r,rk:r?rankOf(h).get(r[0]):null}});
+  const avg=H.map(h=>inv?null:mean(h.allSites.filter(r=>isStore(r[0])).map(r=>get(r,h))));
   const W=760,Ht=260,pl=52,pr=16,pt=16,pb=40,n=Math.max(H.length-1,1);
   const vals=[...pts.map(p=>p.v).filter(v=>v!=null),...avg.filter(v=>v!=null)];
-  const vmax=Math.max(...vals,S.st.tm==='rate'?0.05:5),step=niceStep(vmax),ymax=Math.ceil(vmax/step)*step;
-  const x=i=>pl+i/n*(W-pl-pr),y=v=>pt+(1-v/ymax)*(Ht-pt-pb);
+  const nMax=inv?Math.max(2,...H.map(h=>rankOf(h).size)):0;
+  const vmax=inv?nMax:Math.max(...vals,S.st.tm==='rate'?0.05:5),step=inv?(nMax>30?10:5):niceStep(vmax),ymax=inv?nMax:Math.ceil(vmax/step)*step;
+  const x=i=>pl+i/n*(W-pl-pr),y=inv?v=>pt+(v-1)/(ymax-1)*(Ht-pt-pb):v=>pt+(1-v/ymax)*(Ht-pt-pb);
   const ax='font-family="Inter Tight, Arial, sans-serif" font-size="11" fill="#8A8B8C"';
-  let g='';for(let v=0;v<=ymax+1e-9;v+=step)g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="#2E2E2E" stroke-dasharray="3 3"/><text x="${pl-6}" y="${y(v)+4}" text-anchor="end" ${ax}>${f(v)}</text>`;
+  const ticks=[];if(inv){ticks.push(1);for(let v=step;v<ymax;v+=step)ticks.push(v);ticks.push(ymax)}else for(let v=0;v<=ymax+1e-9;v+=step)ticks.push(v);
+  let g='';for(const v of ticks)g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="#2E2E2E" stroke-dasharray="3 3"/><text x="${pl-6}" y="${y(v)+4}" text-anchor="end" ${ax}>${f(v)}</text>`;
   let lastDay='';H.forEach((h,i)=>{const d=dayOf(h.ts);if(d!==lastDay){lastDay=d;g+=`<line x1="${x(i)}" x2="${x(i)}" y1="${pt}" y2="${Ht-pb}" stroke="#242424"/><text x="${x(i)+3}" y="${Ht-22}" ${ax}>${fmtDay.format(new Date(h.ts)).replace(/^\w+, /,'')}</text>`}});
   g+=`<text x="${pl}" y="${Ht-6}" ${ax}>Each point is an observation update: 10am, 1pm and 5pm (9am, 12pm and 4pm before 6 Nov)</text>`;
   const seg=pts.filter(p=>p.v!=null);
   const line=seg.length?`<path d="M${seg.map(p=>x(p.i).toFixed(1)+','+y(p.v).toFixed(1)).join('L')}" fill="none" stroke="#FFDE14" stroke-width="2.5" stroke-linejoin="round"/>`:'';
-  const av=`<path d="M${avg.map((v,i)=>v==null?'':x(i).toFixed(1)+','+y(v).toFixed(1)).filter(Boolean).join('L')}" fill="none" stroke="#CCCCCC" stroke-width="1.25" stroke-dasharray="4 4"/>`;
+  const av=inv?'':`<path d="M${avg.map((v,i)=>v==null?'':x(i).toFixed(1)+','+y(v).toFixed(1)).filter(Boolean).join('L')}" fill="none" stroke="#CCCCCC" stroke-width="1.25" stroke-dasharray="4 4"/>`;
   const dots=seg.map(p=>`<circle cx="${x(p.i)}" cy="${y(p.v)}" r="${p.flag?4.5:3}" fill="${p.flag?'#FF5A4F':'#FFDE14'}"/>`).join('');
   const guide=S.st.hover!=null?`<line x1="${x(S.st.hover)}" x2="${x(S.st.hover)}" y1="${pt}" y2="${Ht-pb}" stroke="#fff" stroke-opacity=".5"/>`:'';
   $('trendChart').innerHTML=`<svg id="tsvg" viewBox="0 0 ${W} ${Ht}" tabindex="0" role="img" aria-label="${esc(lab)} for ${esc(S.st.store)} over recent updates">${g}${av}${line}${dots}${guide}<rect x="${pl}" y="${pt}" width="${W-pl-pr}" height="${Ht-pt-pb}" fill="transparent"/></svg>`;
   TG={W,pl,pr,n,x,pts,avg,f,lab};
   const flagged=pts.filter(p=>p.flag).length,withV=seg.length;
-  $('trendSub').innerHTML=`<span style="color:#FFDE14">━</span> ${esc(isStore(S.st.store)?shortName(S.st.store):S.st.store)} &nbsp; <span style="color:#CCCCCC">┅</span> average store &nbsp; <span style="color:#FF5A4F">●</span> flagged. Flagged at ${flagged} of ${withV} updates since ${H.length?runLab(H[0].ts):''}.`;
+  const nm=esc(isStore(S.st.store)?shortName(S.st.store):S.st.store);
+  $('trendSub').innerHTML=(inv?(isStore(S.st.store)?`<span style="color:#FFDE14">━</span> ${nm} ops rank among stores at each update (1 = best, top of the chart) &nbsp; <span style="color:#FF5A4F">●</span> flagged. Hover a point for the score breakdown.`:`Warehouses are not ranked. Pick a store to see its rank.`)+' ':`<span style="color:#FFDE14">━</span> ${nm} &nbsp; <span style="color:#CCCCCC">┅</span> average store &nbsp; <span style="color:#FF5A4F">●</span> flagged. `)+`Flagged at ${flagged} of ${withV} updates since ${H.length?runLab(H[0].ts):''}.`;
   renderTTip();
 }
 function renderTTip(){
   const tip=$('ttip');if(!TG||S.st.hover==null){tip.hidden=true;return}
   const i=S.st.hover,p=TG.pts[i];if(!p){tip.hidden=true;return}
   const r=p.row,box=$('trendBox').getBoundingClientRect(),svg=$('tsvg').getBoundingClientRect(),sc=svg.width/TG.W;
-  let html=`<b>${runLab(p.ts)} PT</b><div class="r"><span>${esc(TG.lab)}</span><strong>${p.v==null?'n/a':TG.f(p.v)}</strong></div><div class="r"><span>Average store</span><strong>${TG.avg[i]==null?'n/a':TG.f(TG.avg[i])}</strong></div>`;
+  const k=p.rk;
+  let html=`<b>${runLab(p.ts)} PT</b><div class="r"><span>${esc(TG.lab)}</span><strong>${p.v==null?'n/a':TG.f(p.v)}</strong></div>`;
+  if(TG.avg[i]!=null)html+=`<div class="r"><span>Average store</span><strong>${TG.f(TG.avg[i])}</strong></div>`;
+  if(k)html+=(S.st.tm==='rank'?`<div class="r"><span>Score</span><strong>${Math.round(k.score)} / 100 (of ${k.N} stores)</strong></div>`:`<div class="r"><span>Ops rank · score</span><strong>${k.rank} of ${k.N} · ${Math.round(k.score)}</strong></div>`)+(S.st.tm==='rank'?RANK_PARTS.map(([l,,,f],j)=>`<div class="r"><span>${l}</span><strong>${k.parts[j].v==null?'n/a':f(k.parts[j].v)} → ${Math.round(k.parts[j].p)}</strong></div>`).join(''):'');
   if(r)html+=`<div class="r"><span>Open · aged · shipped</span><strong>${r[1]} · ${r[7]} · ${r[6]}</strong></div><div class="r"><span>Declines today</span><strong>${r[3]}</strong></div>`;
   const w=r&&flagWhy(r);if(w)html+=`<div class="hint" style="color:#FF5A4F">Flagged: ${esc(w.join(', '))}</div>`;
   tip.innerHTML=html;tip.hidden=false;
@@ -567,7 +635,7 @@ box.addEventListener('click',e=>{const h=hourFromEvent(e);if(h==null||!G)return;
 box.addEventListener('keydown',e=>{if(!G)return;if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();const cur=S.hover??hourOf(selRow().ts);S.hover=Math.max(3,Math.min(21,cur+(e.key==='ArrowLeft'?-1:1)));renderChart(selRow());$('svg').focus()}else if(e.key==='Enter'&&S.hover!=null){const p=G.dayPts.find(q=>q.h===S.hover);if(p&&selectable(p.ts)){select(p.ts);$('svg').focus()}}else if(e.key==='Escape'){S.hover=null;renderChart(selRow())}});
 $('stabs').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(b){S.st.tab=b.dataset.t;S.st.hover=null;renderStores(selRow())}});
 $('regPills').addEventListener('click',e=>{const b=e.target.closest('[data-r]');if(b){S.st.reg=b.dataset.r;renderStores(selRow())}});
-$('rankTbl').addEventListener('click',e=>{const h=e.target.closest('th[data-k]');if(h){const k=h.dataset.k;if(k==='trend')return;if(S.st.sort===k)S.st.dir*=-1;else{S.st.sort=k;S.st.dir=k==='n'?1:-1}renderStores(selRow());return}const r=e.target.closest('tr[data-s]');if(r){S.st.store=r.dataset.s;S.st.tab='trend';renderStores(selRow())}});
+$('rankTbl').addEventListener('click',e=>{const h=e.target.closest('th[data-k]');if(h){const k=h.dataset.k;if(k==='trend')return;if(S.st.sort===k)S.st.dir*=-1;else{S.st.sort=k;S.st.dir=k==='n'||k==='rank'?1:-1}renderStores(selRow());return}const r=e.target.closest('tr[data-s]');if(r){S.st.store=r.dataset.s;S.st.tab='trend';renderStores(selRow())}});
 $('rankTbl').addEventListener('keydown',e=>{if(e.key==='Enter'){const r=e.target.closest('tr[data-s]');if(r){S.st.store=r.dataset.s;S.st.tab='trend';renderStores(selRow())}}});
 $('offs').addEventListener('click',e=>{if(e.target.closest('#offsMore')){S.st.allOffs=!S.st.allOffs;renderStores(selRow());return}const r=e.target.closest('[data-s]');if(r){S.st.store=r.dataset.s;S.st.tab='trend';renderStores(selRow())}});
 $('storeSel').addEventListener('change',e=>{S.st.store=e.target.value;renderStores(selRow())});
@@ -577,7 +645,8 @@ const tIdx=e=>{const s=$('tsvg');if(!s||!TG)return null;const r=s.getBoundingCli
 tbox.addEventListener('pointermove',e=>{const i=tIdx(e);if(i!=null&&i!==S.st.hover){S.st.hover=i;renderTrend(runsUpTo(selRow().ts))}});
 tbox.addEventListener('pointerleave',()=>{if(S.st.hover!=null){S.st.hover=null;renderTrend(runsUpTo(selRow().ts))}});
 tbox.addEventListener('keydown',e=>{if(!TG)return;if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();S.st.hover=Math.max(0,Math.min(TG.n,(S.st.hover??TG.n)+(e.key==='ArrowLeft'?-1:1)));renderTrend(runsUpTo(selRow().ts));$('tsvg').focus()}});
-window.addEventListener('resize',()=>{renderTip();renderTTip()});
+window.addEventListener('resize',()=>{renderTip();renderTTip();wEnd()});
+$('wscroll').addEventListener('scroll',wEnd,{passive:true});
 
 (async()=>{
   let db=null;try{db=window.claude&&await claude.use('db')}catch(e){db=null}
@@ -597,3 +666,4 @@ window.addEventListener('resize',()=>{renderTip();renderTTip()});
   db.collection('runs').limit(1000).onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());S.runs=m;S.runList=Object.values(m).filter(r=>r&&r.ts).sort((a,b)=>a.ts-b.ts);if(S.rows.length)renderAll()},e=>console.error(e));
 })();
 </script>
+

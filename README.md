@@ -19,11 +19,12 @@ JD brand baseline v2: Forever Forward Sans Headline display (`ForeverForwardSans
 
 - **Picker:** day plus 9am / 12pm / 5pm, with previous / next / latest. KPIs and "usual" are recalculated as of the update you pick.
 - **Observations 1 to 3** for the update.
-- **Now vs usual:** open orders, open % of 24h orders, value, aged over 3 days, on hold, on-time ship today, declines today, warehouse / store split, fiscal MTD.
+- **Now vs usual:** two rows of five: open orders, open % of 24h orders, value, aged over 3 days, on hold; shipped today, on-time ship today, declines today, warehouse / store split, fiscal MTD.
 - **Intraday chart:** metric switch (open, open %, value, aged, declines), series toggles (selected day, 7-day average, 7-day range, same day last week), hover / tap / keyboard tooltips, click a 9am / 12pm / 5pm point to open it.
-- **Watch list** for the update.
+- **Watch list** for the update, the same height as the chart and scrolling.
 - **Stores:**
-  - *Ranking:* every site, sortable, region filter, change vs previous update, 7-day sparkline, flagged rows marked.
+  - *Ranking:* every site, sortable (default: open orders), region filter, change vs previous update, Ops rank, 7-day sparkline, flagged rows marked.
+  - *Ops rank:* stores only, recalculated at every update. Five equal parts (20% each), each a percentile against the other stores: low open share (open ÷ open + shipped + declined today, small stores shrunk toward the all-store rate), high on-time shipping today (0% when holding orders with none shipped), low decline rate MTD, low share of open orders aged over 3 days (shrunk the same way), and higher shipping volume (average shipped per day over the previous 7 days). Ops rank is also a metric on the store trend chart.
   - *Store trend:* any site, metric switch, vs average store, flagged updates in red.
   - *Repeat offenders:* stores flagged in the last 7 days, one dot per update, main reasons.
   - *Regions:* BC, Prairies, Ontario, QC & Atlantic from the report's own region rows, with trend and busiest stores.
