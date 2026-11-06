@@ -9,7 +9,7 @@ Open ecomm orders for JD Sports Canada, compared with what is usual for the same
 | Source report: VCS_JDSF Open Order Snapshot | Hourly, about :05 past the hour, 3am to 9pm, every day | Emailed xlsx from reports@jdcanada.ca (sheet 1 by site, sheet 2 by region) |
 | Tracker refresh + Slack update | Monday to Friday, **9:10am, 12:10pm, 4:10pm** | Scheduled Claude task, cron `10 9,12,16 * * 1-5` (America/Vancouver). The evening update moved from 5:10pm to 4:10pm on 3 Nov 2026 so it runs while the laptop is open. |
 | Snapshots shown in the tracker picker | **9am, 12pm and 4pm** each day (5pm before 3 Nov 2026) | Other hours feed the intraday chart only |
-| GitHub Pages data refresh | Monday to Friday, **9:50am, 12:50pm, 4:50pm** | Scheduled task uploads `data/tracker.json` (needs the laptop open) |
+| GitHub Pages refresh (this site) | Monday to Friday, **about 10am, 1pm and 5pm PT** (task runs 9:50am, 12:50pm, 4:50pm) | Cloud scheduled task pushes `data/tracker.json` with git (no laptop needed). The page shows the 9am, 12pm and 4pm updates |
 | Backfill | Every run | Missing hourly snapshots from the last 24h, and run records for missed 9am / 12pm / 5pm snapshots |
 | Monday 9:10am run | Weekly | Adds a line on Saturday and Sunday 5pm open orders vs usual |
 | Stat holidays | Excluded from "usual" | 12 Oct, 11 Nov, 25 Dec, 26 Dec 2026, 1 Jan 2027 (see `baseline.py`) |
