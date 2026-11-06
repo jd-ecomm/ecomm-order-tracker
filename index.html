@@ -253,6 +253,8 @@ const hl=h=>h===0?'12am':h===12?'12pm':h>12?(h-12)+'pm':h+'am';
 // Check (observation) times by day: 9am, 12pm, 5pm until 2 Nov 2026; 9am, 12pm, 4pm from 3 Nov; 6 Nov 9am then 1pm and 5pm (cloud switch); 10am, 1pm, 5pm from 9 Nov.
 const CK=d=>d<'2026-11-03'?[9,12,17]:d<'2026-11-06'?[9,12,16]:d==='2026-11-06'?[9,13,17]:[10,13,17];
 const isCheckTs=ts=>CK(dayOf(ts)).includes(hourOf(ts));
+const HOURLY_FROM='2026-11-06';
+const selectable=ts=>dayOf(ts)>=HOURLY_FROM||isCheckTs(ts);
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 const docId=ts=>new Date(ts).toISOString().slice(0,16).replace(':','');
 
@@ -293,7 +295,7 @@ function expected(rows,L,k){
   return mean(recent.map(([,o])=>o.v/f(o.wd)))*f(wdOf(L.ts));
 }
 
-const checks=()=>S.rows.filter(r=>isCheckTs(r.ts));
+const checks=()=>S.rows.filter(r=>selectable(r.ts));
 function selRow(){const R=checks();if(!R.length)return S.rows[S.rows.length-1]||null;return (S.sel!=null&&R.find(r=>r.ts===S.sel))||R[R.length-1]}
 const isLatest=L=>{const C=checks();return L===C[C.length-1]};
 function select(ts){S.sel=ts;S.hover=null;renderAll()}
@@ -374,7 +376,7 @@ function renderTip(){
   if(S.show.band&&s)html+=row('rgba(255,222,20,.5)','7-day range',`${M.f(s.min)} to ${M.f(s.max)}`);
   if(S.show.lw)html+=row('#43D5B0','Last week',w?M.f(w.v):'n/a');
   if(d&&s&&s.avg){const diff=k=>S.metric==='openPct'?((d.v-s.avg)*100).toFixed(1)+' pts':Math.round((d.v/s.avg-1)*100)+'%';html+=`<div class="r"><span>vs average</span><strong>${(d.v>=s.avg?'+':'')+diff()}</strong></div>`}
-  if(d&&isCheckTs(d.ts))html+=`<div class="hint">Click to open this update</div>`;
+  if(d&&selectable(d.ts))html+=`<div class="hint">Click to open this update</div>`;
   tip.innerHTML=html;tip.hidden=false;
   const px=(svg.left-box.left)+G.x(h)*sc,tw=tip.offsetWidth;
   tip.style.left=Math.max(0,Math.min(px+12+tw>box.width?px-12-tw:px+12,box.width-tw))+'px';
@@ -383,12 +385,12 @@ function renderTip(){
 function hourFromEvent(e){const svg=$('svg');if(!svg||!G)return null;const r=svg.getBoundingClientRect(),vx=(e.clientX-r.left)/r.width*G.W;const h=Math.round(3+(vx-G.pl)/(G.W-G.pl-G.pr)*18);return Math.max(3,Math.min(21,h))}
 
 function renderWatch(L){
-  const run0=runFor(L.ts),meta=isLatest(L)&&S.meta&&Math.abs((S.meta.ts||0)-L.ts)<36e5?S.meta:null;
+  const runX=runFor(L.ts),prior=runX?null:runBefore(L.ts),run0=runX||prior,meta=!prior&&isLatest(L)&&S.meta&&Math.abs((S.meta.ts||0)-L.ts)<36e5?S.meta:null;
   const run=run0&&run0.sites?run0:(meta||run0);
   const sites=(run&&run.sites&&run.sites.length)?run.sites:(run0?deriveWatch(run0):[]);
   $('watch').innerHTML=sites.length?sites.map(s=>`<li class="${s.flag?'flag':''}"><span class="n">${esc(s.n)}</span><span class="m">${s.open}</span><span class="s">${money(s.val)} open · ${s.declToday} declines today · ${pct(s.declRate)} decline rate MTD${s.note?' · '+esc(s.note):''}</span></li>`).join(''):`<li class="none">No store detail was saved for this update.</li>`;
   const ob=run?(Array.isArray(run.observations)&&run.observations.length?run.observations:[run.what,run.sowhat,run.next].filter(Boolean)):[];
-  $('obs').innerHTML=ob.length?ob.slice(0,3).map((t,i)=>`<div><h3>Observation ${i+1}</h3><p>${esc(t)}</p></div>`).join(''):'<p class="obsnone">No observations were written for this update. Observations start from the 12pm update on 3 Nov 2026.</p>';
+  $('obs').innerHTML=ob.length?(prior?`<p class="obsnone">Hourly reading. Store detail and observations below are from the ${hl(hourOf(prior.ts))} update. New ones are written at 10am, 1pm and 5pm.</p>`:'')+ob.slice(0,3).map((t,i)=>`<div><h3>Observation ${i+1}</h3><p>${esc(t)}</p></div>`).join(''):'<p class="obsnone">No observations were written for this update. Observations start from the 12pm update on 3 Nov 2026.</p>';
   $('obssec').hidden=false;$('mid').hidden=false;
 }
 
@@ -396,7 +398,7 @@ function renderLog(L){
   const R=S.rows,days=[...new Set(R.map(r=>dayOf(r.ts)))].slice(-10).reverse();
   const avgOf=(h,k)=>mean(R.filter(r=>hourOf(r.ts)===h).map(r=>r[k]).filter(v=>v!=null));
   let tr='';
-  days.forEach(d=>CK(d).slice().reverse().forEach(h=>{
+  days.forEach(d=>(d>=HOURLY_FROM?[...new Set(R.filter(q=>dayOf(q.ts)===d).map(q=>hourOf(q.ts)))].sort((a,b)=>b-a):CK(d).slice().reverse()).forEach(h=>{
     const r=R.find(q=>dayOf(q.ts)===d&&hourOf(q.ts)===h);if(!r)return;
     const cls=k=>{const a=avgOf(h,k);return a==null||r[k]==null?'':r[k]>a*1.15?'hi':r[k]<a*.85?'lo':''};
     tr+=`<tr data-ts="${r.ts}" class="${r.ts===L.ts?'sel':''}" tabindex="0"><td>${fmtDay.format(new Date(r.ts))}</td><td>${hl(h)}</td><td class="${cls('open')}">${int(r.open)}</td><td class="${cls('openPct')}">${r.openPct!=null?pct(r.openPct):'–'}</td><td>${money(r.val)}</td><td class="${cls('gt3')}">${r.gt3}</td><td>${r.hold}</td><td>${pct(r.otToday)}</td><td class="${cls('declToday')}">${r.declToday}</td><td>${pct(r.declRate)}</td></tr>`;
@@ -413,6 +415,7 @@ const shortName=n=>n.replace(/^\d+-/,'').replace(/^JD Sports /,'').replace(/ Sho
 const regionOf=n=>{const c=n.split('-')[0],i=S.stores[c];return i?i.region:(WH.has(n)?'Warehouse':null)};
 // allSites row: [name, open, val, declToday, declRateMTD, otToday, shipToday, gt3, hold]
 const SI={n:0,open:1,val:2,decl:3,rate:4,ot:5,ship:6,gt3:7,hold:8};
+function runBefore(ts){let best=null;for(const r of S.runList){if(r.ts<=ts&&dayOf(r.ts)===dayOf(ts)&&(!best||r.ts>best.ts))best=r}return best}
 function runFor(ts){let best=null,bd=40*60e3;for(const r of S.runList){const d=Math.abs(r.ts-ts);if(d<=bd){bd=d;best=r}}return best}
 function runsUpTo(ts){return S.runList.filter(r=>r.allSites&&r.ts<=ts+40*60e3)}
 function flagWhy(r){if(!isStore(r[0]))return null;const w=[];if(r[1]>=25)w.push(r[1]+' open');if(r[3]>=8)w.push(r[3]+' declines');if(r[6]===0&&r[1]>=10)w.push('0 shipped with '+r[1]+' open');return w.length?w:null}
@@ -553,8 +556,8 @@ $('log').addEventListener('keydown',e=>{if(e.key==='Enter'){const r=e.target.clo
 const box=$('chartBox');
 box.addEventListener('pointermove',e=>{const h=hourFromEvent(e);if(h!=null&&h!==S.hover){S.hover=h;renderChart(selRow())}});
 box.addEventListener('pointerleave',()=>{if(S.hover!=null){S.hover=null;renderChart(selRow())}});
-box.addEventListener('click',e=>{const h=hourFromEvent(e);if(h==null||!G)return;const p=G.dayPts.find(q=>q.h===h);if(p&&isCheckTs(p.ts))select(p.ts)});
-box.addEventListener('keydown',e=>{if(!G)return;if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();const cur=S.hover??hourOf(selRow().ts);S.hover=Math.max(3,Math.min(21,cur+(e.key==='ArrowLeft'?-1:1)));renderChart(selRow());$('svg').focus()}else if(e.key==='Enter'&&S.hover!=null){const p=G.dayPts.find(q=>q.h===S.hover);if(p&&isCheckTs(p.ts)){select(p.ts);$('svg').focus()}}else if(e.key==='Escape'){S.hover=null;renderChart(selRow())}});
+box.addEventListener('click',e=>{const h=hourFromEvent(e);if(h==null||!G)return;const p=G.dayPts.find(q=>q.h===h);if(p&&selectable(p.ts))select(p.ts)});
+box.addEventListener('keydown',e=>{if(!G)return;if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();const cur=S.hover??hourOf(selRow().ts);S.hover=Math.max(3,Math.min(21,cur+(e.key==='ArrowLeft'?-1:1)));renderChart(selRow());$('svg').focus()}else if(e.key==='Enter'&&S.hover!=null){const p=G.dayPts.find(q=>q.h===S.hover);if(p&&selectable(p.ts)){select(p.ts);$('svg').focus()}}else if(e.key==='Escape'){S.hover=null;renderChart(selRow())}});
 $('stabs').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(b){S.st.tab=b.dataset.t;S.st.hover=null;renderStores(selRow())}});
 $('regPills').addEventListener('click',e=>{const b=e.target.closest('[data-r]');if(b){S.st.reg=b.dataset.r;renderStores(selRow())}});
 $('rankTbl').addEventListener('click',e=>{const h=e.target.closest('th[data-k]');if(h){const k=h.dataset.k;if(k==='trend')return;if(S.st.sort===k)S.st.dir*=-1;else{S.st.sort=k;S.st.dir=k==='n'?1:-1}renderStores(selRow());return}const r=e.target.closest('tr[data-s]');if(r){S.st.store=r.dataset.s;S.st.tab='trend';renderStores(selRow())}});
