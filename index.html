@@ -663,7 +663,10 @@ $('wscroll').addEventListener('scroll',wEnd,{passive:true});
   if(!db){
     // Outside Claude (e.g. GitHub Pages): read the data file the scheduled runs publish next to this page.
     try{
-      const d=await (await fetch('data/tracker.json?t='+Date.now(),{cache:'no-store'})).json();
+      let d=null;
+      // Data comes straight from the repo so hourly updates show even if a GitHub Pages deploy fails; the copy next to this page is the fallback.
+      for(const u of ['https://raw.githubusercontent.com/jd-ecomm/ecomm-order-tracker/main/data/tracker.json?t='+Date.now(),'data/tracker.json?t='+Date.now()]){try{const r=await fetch(u,{cache:'no-store'});if(r.ok){const j=await r.json();if(!d||(j.generated||0)>(d.generated||0))d=j}}catch(e){}}
+      if(!d)throw new Error('no data');
       S.rows=(d.snapshots||[]).filter(r=>r&&r.ts&&r.open!=null).sort((a,b)=>a.ts-b.ts);
       S.runs=d.runs||{};S.runList=Object.values(S.runs).filter(r=>r&&r.ts).sort((a,b)=>a.ts-b.ts);
       S.meta=d.latest||null;S.stores=d.stores||{};
