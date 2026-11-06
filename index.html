@@ -189,7 +189,7 @@ td.hi{color:var(--alert);font-weight:600} td.lo{color:var(--teal);font-weight:60
         <div class="prow" id="metrics" role="group" aria-label="Chart metric"></div></div>
       <div class="chart" id="chartBox"><div id="chart"></div><div class="tip" id="tip" hidden></div></div>
       <div class="toggles" id="toggles" role="group" aria-label="Chart series"></div>
-      <p class="cnote">Hover or tap the chart to compare an hour. Click a 10am, 1pm or 5pm point (the dotted hours) to open that update. Arrow keys work when the chart is focused.</p>
+      <p class="cnote">Hover or tap the chart to compare an hour. Click any hour to open it (from 6 Nov every hour is a full update; before that, the dotted 9am, 12pm and 5pm points). Arrow keys work when the chart is focused.</p>
     </section>
     <section class="panel">
       <h2>Watch list</h2>
@@ -390,7 +390,7 @@ function renderWatch(L){
   const sites=(run&&run.sites&&run.sites.length)?run.sites:(run0?deriveWatch(run0):[]);
   $('watch').innerHTML=sites.length?sites.map(s=>`<li class="${s.flag?'flag':''}"><span class="n">${esc(s.n)}</span><span class="m">${s.open}</span><span class="s">${money(s.val)} open · ${s.declToday} declines today · ${pct(s.declRate)} decline rate MTD${s.note?' · '+esc(s.note):''}</span></li>`).join(''):`<li class="none">No store detail was saved for this update.</li>`;
   const ob=run?(Array.isArray(run.observations)&&run.observations.length?run.observations:[run.what,run.sowhat,run.next].filter(Boolean)):[];
-  $('obs').innerHTML=ob.length?(prior?`<p class="obsnone">Hourly reading. Store detail and observations below are from the ${hl(hourOf(prior.ts))} update. New ones are written at 10am, 1pm and 5pm.</p>`:'')+ob.slice(0,3).map((t,i)=>`<div><h3>Observation ${i+1}</h3><p>${esc(t)}</p></div>`).join(''):'<p class="obsnone">No observations were written for this update. Observations start from the 12pm update on 3 Nov 2026.</p>';
+  $('obs').innerHTML=ob.length?(prior?`<p class="obsnone">Hourly reading. Store detail and observations for this hour are not written yet, so these are from the ${hl(hourOf(prior.ts))} update. New ones are written at 10am, 1pm and 5pm.</p>`:'')+ob.slice(0,3).map((t,i)=>`<div><h3>Observation ${i+1}</h3><p>${esc(t)}</p></div>`).join(''):'<p class="obsnone">No observations were written for this update. Observations start from the 12pm update on 3 Nov 2026.</p>';
   $('obssec').hidden=false;$('mid').hidden=false;
 }
 
@@ -511,7 +511,7 @@ function renderTTip(){
 }
 
 function renderOffs(L,hist){
-  const from=L.ts-7*864e5,H=hist.filter(h=>h.ts>from);
+  const from=L.ts-7*864e5,H=hist.filter(h=>h.ts>from&&isCheckTs(h.ts));
   const tally=new Map();
   H.forEach((h,i)=>h.allSites.forEach(r=>{if(!isStore(r[0]))return;const t=tally.get(r[0])||{n:r[0],c:0,why:{},marks:new Array(H.length).fill(false)};const w=flagWhy(r);if(w){t.c++;t.marks[i]=true;w.forEach(x=>{const k=/declines/.test(x)?'8+ declines':/shipped/.test(x)?'nothing shipped':'25+ open';t.why[k]=(t.why[k]||0)+1})}tally.set(r[0],t)}));
   const list=[...tally.values()].filter(t=>t.c>0).sort((a,b)=>b.c-a.c||a.n.localeCompare(b.n));
