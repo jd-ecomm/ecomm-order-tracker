@@ -527,7 +527,7 @@ function rkCell(k,p){
   if(!k)return '<td class="rk"><small>Warehouse</small></td>';
   const mv=p?p.rank-k.rank:0,cls=k.rank<=5?'top':k.rank>k.N-5?'bot':'';
   const arrow=mv?` <span class="dlt ${mv>0?'dn':'up'}">${mv>0?'▲':'▼'}${Math.abs(mv)}</span>`:'';
-  return `<td class="rk ${cls}" title="${esc(rankTitle(k))}">${k.rank}${arrow}<small>of ${k.N} · ${Math.round(k.score)}</small></td>`;
+  return `<td class="rk ${cls}" title="${esc(rankTitle(k))}">${k.rank}${arrow}<small>of ${k.N} · score ${Math.round(k.score)}</small></td>`;
 }
 function renderRank(cur,hist,stale){
   $('regPills').innerHTML='<span class="lab">Region</span>'+['All',...REGS,'Warehouse'].map(r=>`<button class="pill${S.st.reg===r?' on':''}" data-r="${r}">${r==='All'?'All sites':r==='Warehouse'?'Warehouses':REGLAB[r]}</button>`).join('');
@@ -544,7 +544,7 @@ function renderRank(cur,hist,stale){
     const p=pm.get(r[0]),d=p?r[1]-p[1]:null,w=flagWhy(r);
     const sp=sparkSvg(last21.map(h=>{const x=h.allSites.find(q=>q[0]===r[0]);return x?x[1]:null}),90,24,!!w);
     return `<tr data-s="${esc(r[0])}" class="${w?'flag':''}" tabindex="0"><td class="nm">${esc(shortName(r[0]))}<span class="rg">${esc(r[0].split('-')[0])} · ${esc(REGLAB[regionOf(r[0])]||regionOf(r[0])||'')}</span></td><td>${r[1]}</td><td>${d==null||d===0?'<span class="dlt">0</span>':`<span class="dlt ${d>0?'up':'dn'}">${d>0?'+':''}${d}</span>`}</td><td>${money(r[2])}</td>${rkCell(RK.get(r[0]),PRK.get(r[0]))}<td>${r[7]}</td><td>${r[6]}</td><td>${r[3]}</td><td>${pct(r[4])}</td><td>${r[5]==null||r[6]===0?'–':pct(r[5])}</td><td>${sp}</td></tr>`}).join('');
-  $('rankSub').textContent=`${rows.length} sites at ${runLab(cur.ts)} PT${stale}. Change is open orders vs the previous update${prev?` (${runLab(prev.ts)})`:''}. Ops rank (1 = best of ${RK.size} stores) weighs five things equally, each against the other stores at this update: low open share (open ÷ open + shipped + declined today), high on-time shipping today (0% if it holds orders and has shipped none), low decline rate MTD a low share of open orders aged over 3 days, and higher shipping volume (average orders shipped per day over the previous 7 days, so busy stores get credit for the load they carry) (small stores are weighted toward the all-store rate so a handful of orders can't swing them). Arrows show the move since the previous update; hover a rank for its breakdown. Red edge = flagged (25+ open, 8+ declines, or 10+ open with nothing shipped today). Click a row for its trend.`;
+  $('rankSub').textContent=`${rows.length} sites at ${runLab(cur.ts)} PT${stale}. Change is open orders vs the previous update${prev?` (${runLab(prev.ts)})`:''}. Ops rank (1 = best of ${RK.size} stores, with a score out of 100 underneath) weighs five things equally, each against the other stores at this update: low open share (open ÷ open + shipped + declined today), high on-time shipping today (0% if it holds orders and has shipped none), low decline rate MTD, a low share of open orders aged over 3 days, and higher shipping volume (average orders shipped per day over the previous 7 days, so busy stores get credit for the load they carry) (small stores are weighted toward the all-store rate so a handful of orders can't swing them). Arrows show the move since the previous update; hover a rank for its breakdown. Red edge = flagged (25+ open, 8+ declines, or 10+ open with nothing shipped today). Click a row for its trend.`;
 }
 
 const ordN=v=>'#'+Math.round(v);
