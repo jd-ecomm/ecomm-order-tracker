@@ -4,21 +4,14 @@ Open ecomm orders for JD Sports Canada, compared with what is usual for the same
 
 ## Refresh timings
 
-| What | When (Pacific time) | Notes |
-| --- | --- | --- |
-| Source report: VCS_JDSF Open Order Snapshot | Hourly, about :05 past the hour, 3am to 9pm, every day | Emailed xlsx from reports@jdcanada.ca (sheet 1 by site, sheet 2 by region) |
-| Tracker refresh + Slack update | Monday to Friday, **9:10am, 12:10pm, 4:10pm** | Scheduled Claude task, cron `10 9,12,16 * * 1-5` (America/Vancouver). The evening update moved from 5:10pm to 4:10pm on 3 Nov 2026 so it runs while the laptop is open. |
-| Snapshots shown in the tracker picker | **9am, 12pm and 4pm** each day (5pm before 3 Nov 2026) | Other hours feed the intraday chart only |
-| GitHub Pages refresh (this site) | Monday to Friday, **about 10am, 1pm and 5pm PT** (task runs 9:50am, 12:50pm, 4:50pm) | Cloud scheduled task pushes `data/tracker.json` with git (no laptop needed). The page shows the 9am, 12pm and 4pm updates |
-| Backfill | Every run | Missing hourly snapshots from the last 24h, and run records for missed 9am / 12pm / 5pm snapshots |
-| Monday 9:10am run | Weekly | Adds a line on Saturday and Sunday 5pm open orders vs usual |
+| What | When (Vancouver) | How |
+|---|---|---|
+| Hourly tracker update | Monday to Friday, every hour 9:12am to 5:12pm | Cloud scheduled task "Ecomm Order Tracker (cloud)". Reads the newest VCS_JDSF Open Order Snapshot email straight from Gmail (raw message, attachment parsed by `tools/parse_snapshot.py`), logs it to the artifact database, then rebuilds `data/tracker.json` (`tools/build_tracker_json.py`) and pushes it. No laptop needed. Started 6 Nov 2026 |
+| Observations + Slack update | 10:12am, 1:12pm, 5:12pm (the 10am, 1pm and 5pm snapshots) | Same task: run record, watch list, three observations, meta/latest and the Slack DM |
+| Earlier schedule | Before 6 Nov 2026 | Work-PC task at 9:10am, 12:10pm and 4:10pm (5:10pm before 3 Nov), GitHub copy at 9:50, 12:50, 4:50 |
+| Backfill | Every run | Missing hourly snapshots from the last 24h |
+| Monday 10:12am run | Weekly | Adds a line on Saturday and Sunday 5pm open orders vs usual |
 | Stat holidays | Excluded from "usual" | 12 Oct, 11 Nov, 25 Dec, 26 Dec 2026, 1 Jan 2027 (see `baseline.py`) |
-
-Each run:
-1. Reads the newest Open Order Snapshot from Gmail (attachment parsed in the browser) and backfills missing snapshots.
-2. Writes company totals to the `snapshots` collection (one doc per hour, id = UTC `YYYY-MM-DDTHHMM`).
-3. Writes a `runs` record: watch-list stores, three observations, every site's figures and the four region rows.
-4. Updates `meta/latest` and sends a Slack DM: KPIs vs usual, a verdict line, a watch list and Observation 1, 2 and 3.
 
 ## Tracker page (`index.html`)
 
