@@ -25,9 +25,10 @@ JD brand baseline v2: Forever Forward Sans Headline display (`ForeverForwardSans
 - **Stores:**
   - *Ranking:* every site, sortable (default: open orders), region filter, change vs previous update, Ops rank, 7-day sparkline, flagged rows marked.
   - *Ops rank:* stores only, recalculated at every update. Five equal parts (20% each), each a percentile against the other stores: low open share (open ÷ open + shipped + declined today, small stores shrunk toward the all-store rate), high on-time shipping today (0% when holding orders with none shipped), low decline rate MTD, low share of open orders aged over 3 days (shrunk the same way), and higher shipping volume (average shipped per day over the previous 7 days). Ops rank is also a metric on the store trend chart.
-  - *Store trend:* any site, metric switch, vs average store, flagged updates in red.
+  - *Store trend:* any site, metric switch, vs average store, flagged days in red. One point per weekday at the same time of day as the update being viewed (for example 4pm on each of the last 14 days with store detail; nearest update within 2 hours if that hour was not logged), with the change and rate per day over the period (Ryan, 12 Nov 2026). The Ranking sparkline and Regions trend use the same one-per-day series over 7 days.
   - *Repeat offenders:* stores flagged in the last 7 days, one dot per update, main reasons.
   - *Regions:* BC, Prairies, Ontario, QC & Atlantic from the report's own region rows, with trend and busiest stores.
+- **Auto-refresh:** in the artifact the page listens to the database live; on GitHub Pages it re-reads `data/tracker.json` every 5 minutes and when the tab comes back into view, so each hourly update shows without a reload ("Latest" moves forward; a past update you picked stays put).
 - **Check-time log:** last 10 days of 9am / 12pm / 5pm readings, click to open.
 
 A store is flagged when it holds 25+ open orders, has 8+ declines today, or has 10+ open orders with nothing shipped today.

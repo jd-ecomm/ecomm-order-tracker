@@ -255,7 +255,7 @@ td.hi{color:var(--alert);font-weight:600} td.lo{color:var(--teal);font-weight:60
     <div class="tblwrap"><table><thead><tr><th>Day</th><th>Time</th><th>Open</th><th>Open %</th><th>Value</th><th>&gt;3 days</th><th>On hold</th><th>On-time today</th><th>Declines today</th><th>Decline rate MTD</th></tr></thead><tbody id="log"></tbody></table></div>
   </section>
 
-  <p class="foot">Updated every hour on weekdays, 9am to 5pm PT, as each hourly VCS_JDSF Open Order Snapshot arrives (sent at about :05 past each hour). Observations, the watch list and the Slack update come at 10am, 1pm and 5pm (9am, 12pm and 4pm before 6 Nov 2026; 5pm instead of 4pm before 3 Nov). Open % of 24h orders = open orders ÷ (open + orders shipped in the last 24 hours + orders declined in the last 24 hours). "Usual" is the same Pacific hour over the 7 days before the snapshot you are viewing, adjusted for the day of the week. Stat holidays are excluded. Declines and on-time reset daily. Ops rank compares stores only (warehouses are not ranked), recalculated at every update, with five equal parts scored as a percentile against the other stores: open share, on-time shipping today (0% when a store holds orders but has shipped none, neutral when it has no orders), decline rate MTD, share of open orders aged over 3 days, and shipping volume (average shipped per day over the previous 7 days). The table still sorts by open orders unless you pick another column. In the log, red cells are 15%+ above the average for that check time and teal cells 15%+ below. Click a row to open it.</p>
+  <p class="foot">Updated every hour on weekdays, 9am to 5pm PT (the page refreshes itself, no reload needed), as each hourly VCS_JDSF Open Order Snapshot arrives (sent at about :05 past each hour). Observations, the watch list and the Slack update come at 10am, 1pm and 5pm (9am, 12pm and 4pm before 6 Nov 2026; 5pm instead of 4pm before 3 Nov). Open % of 24h orders = open orders ÷ (open + orders shipped in the last 24 hours + orders declined in the last 24 hours). "Usual" is the same Pacific hour over the 7 days before the snapshot you are viewing, adjusted for the day of the week. Stat holidays are excluded. Declines and on-time reset daily. Ops rank compares stores only (warehouses are not ranked), recalculated at every update, with five equal parts scored as a percentile against the other stores: open share, on-time shipping today (0% when a store holds orders but has shipped none, neutral when it has no orders), decline rate MTD, share of open orders aged over 3 days, and shipping volume (average shipped per day over the previous 7 days). The table still sorts by open orders unless you pick another column. In the log, red cells are 15%+ above the average for that check time and teal cells 15%+ below. Click a row to open it.</p>
 </div>
 
 <script>
@@ -508,6 +508,13 @@ function sparkSvg(vals,w=90,h=24,hi){
   return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><path d="M${pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join('L')}" fill="none" stroke="${hi?'#FFDE14':'#6F6F6F'}" stroke-width="1.5"/><circle cx="${last[0]}" cy="${last[1]}" r="2.5" fill="${hi?'#EFFF04':'#CCCCCC'}"/></svg>`;
 }
 const runLab=ts=>fmtDay.format(new Date(ts))+' '+hl(hourOf(ts));
+// One store-detail update per day at the same time of day as the update being viewed (nearest within 2 hours if that hour wasn't logged), newest last.
+const todMin=ts=>hourOf(ts)*60+new Date(ts).getUTCMinutes();
+function dailyAt(hist,ts,days=14){
+  const t0=todMin(ts),best=new Map();
+  hist.forEach(r=>{if(!r.allSites)return;const d=dayOf(r.ts),df=Math.abs(todMin(r.ts)-t0);if(df>120)return;const b=best.get(d);if(!b||df<b.df)best.set(d,{r,df})});
+  return [...best.values()].map(o=>o.r).sort((a,b)=>a.ts-b.ts).slice(-days);
+}
 
 function renderStores(L){
   const hist=runsUpTo(L.ts);
@@ -518,7 +525,7 @@ function renderStores(L){
   ['rank','trend','offs','regions'].forEach(k=>$('sv-'+k).hidden=k!==t);
   const stale=Math.abs(cur.ts-L.ts)>40*60e3?` (latest store detail on file: ${runLab(cur.ts)} PT)`:'';
   if(t==='rank')renderRank(cur,hist,stale);
-  else if(t==='trend')renderTrend(hist);
+  else if(t==='trend')renderTrend(hist,L);
   else if(t==='offs')renderOffs(L,hist);
   else renderRegions(cur,hist,stale);
 }
@@ -532,9 +539,9 @@ function rkCell(k,p){
 function renderRank(cur,hist,stale){
   $('regPills').innerHTML='<span class="lab">Region</span>'+['All',...REGS,'Warehouse'].map(r=>`<button class="pill${S.st.reg===r?' on':''}" data-r="${r}">${r==='All'?'All sites':r==='Warehouse'?'Warehouses':REGLAB[r]}</button>`).join('');
   const prev=hist.length>1?hist[hist.length-2]:null,pm=new Map(prev?prev.allSites.map(r=>[r[0],r]):[]);
-  const last21=hist.slice(-21);
+  const last21=dailyAt(hist,cur.ts,7);
   let rows=cur.allSites.filter(r=>S.st.reg==='All'||regionOf(r[0])===S.st.reg);
-  const cols=[['n','Site'],['open','Open'],['chg','Change'],['val','Value'],['rank','Ops rank'],['gt3','>3 days'],['ship','Shipped today'],['decl','Declines today'],['rate','Decline rate MTD'],['ot','On-time today'],['trend','Open, last 7 days']];
+  const cols=[['n','Site'],['open','Open'],['chg','Change'],['val','Value'],['rank','Ops rank'],['gt3','>3 days'],['ship','Shipped today'],['decl','Declines today'],['rate','Decline rate MTD'],['ot','On-time today'],['trend','Open, last 7 days at this time']];
   const key=S.st.sort,dir=S.st.dir,RK=rankOf(cur),PRK=prev?rankOf(prev):new Map();
   const val=(r,k)=>k==='n'?shortName(r[0]):k==='chg'?(pm.has(r[0])?r[1]-pm.get(r[0])[1]:0):k==='rank'?(RK.get(r[0])||{}).rank??null:r[SI[k]]??-1;
   if(key!=='trend')rows=[...rows].sort((a,b)=>{const x=val(a,key),y=val(b,key);if(x==null||y==null)return (x==null)-(y==null);return (typeof x==='string'?x.localeCompare(y):x-y)*dir});
@@ -544,18 +551,19 @@ function renderRank(cur,hist,stale){
     const p=pm.get(r[0]),d=p?r[1]-p[1]:null,w=flagWhy(r);
     const sp=sparkSvg(last21.map(h=>{const x=h.allSites.find(q=>q[0]===r[0]);return x?x[1]:null}),90,24,!!w);
     return `<tr data-s="${esc(r[0])}" class="${w?'flag':''}" tabindex="0"><td class="nm">${esc(shortName(r[0]))}<span class="rg">${esc(r[0].split('-')[0])} · ${esc(REGLAB[regionOf(r[0])]||regionOf(r[0])||'')}</span></td><td>${r[1]}</td><td>${d==null||d===0?'<span class="dlt">0</span>':`<span class="dlt ${d>0?'up':'dn'}">${d>0?'+':''}${d}</span>`}</td><td>${money(r[2])}</td>${rkCell(RK.get(r[0]),PRK.get(r[0]))}<td>${r[7]}</td><td>${r[6]}</td><td>${r[3]}</td><td>${pct(r[4])}</td><td>${r[5]==null||r[6]===0?'–':pct(r[5])}</td><td>${sp}</td></tr>`}).join('');
-  $('rankSub').textContent=`${rows.length} sites at ${runLab(cur.ts)} PT${stale}. Change is open orders vs the previous update${prev?` (${runLab(prev.ts)})`:''}. Ops rank (1 = best of ${RK.size} stores) weighs five things equally, each against the other stores at this update: low open share (open ÷ open + shipped + declined today), high on-time shipping today (0% if it holds orders and has shipped none), low decline rate MTD, a low share of open orders aged over 3 days, and higher shipping volume (average orders shipped per day over the previous 7 days, so busy stores get credit for the load they carry) (small stores are weighted toward the all-store rate so a handful of orders can't swing them). Arrows show the move since the previous update; hover a rank for its breakdown. Red edge = flagged (25+ open, 8+ declines, or 10+ open with nothing shipped today). Click a row for its trend.`;
+  $('rankSub').textContent=`${rows.length} sites at ${runLab(cur.ts)} PT${stale}. Change is open orders vs the previous update${prev?` (${runLab(prev.ts)})`:''}. Ops rank (1 = best of ${RK.size} stores) weighs five things equally, each against the other stores at this update: low open share (open ÷ open + shipped + declined today), high on-time shipping today (0% if it holds orders and has shipped none), low decline rate MTD, a low share of open orders aged over 3 days, and higher shipping volume (average orders shipped per day over the previous 7 days, so busy stores get credit for the load they carry) (small stores are weighted toward the all-store rate so a handful of orders can't swing them). Arrows show the move since the previous update; hover a rank for its breakdown. Red edge = flagged (25+ open, 8+ declines, or 10+ open with nothing shipped today). Click a row for its trend (one point per day at this time).`;
 }
 
 const ordN=v=>'#'+Math.round(v);
 const TM={open:['Open orders',r=>r[1],int],rank:['Ops rank',(r,h)=>(rankOf(h).get(r[0])||{}).rank??null,ordN],gt3:['Aged over 3 days',r=>r[7],int],decl:['Declines today',r=>r[3],int],ship:['Shipped today',r=>r[6],int],rate:['Decline rate MTD',r=>r[4],pct]};
 let TG=null;
-function renderTrend(hist){
+function renderTrend(hist,L){
+  L=L||selRow();
   const names=[...new Set(hist.flatMap(h=>h.allSites.map(r=>r[0])))].sort((a,b)=>isStore(a)-isStore(b)||a.localeCompare(b));
   if(!S.st.store||!names.includes(S.st.store)){const c=hist[hist.length-1].allSites.filter(r=>isStore(r[0])).sort((a,b)=>b[1]-a[1])[0];S.st.store=c?c[0]:names[0]}
   $('storeSel').innerHTML=names.map(n=>`<option value="${esc(n)}"${n===S.st.store?' selected':''}>${esc(isStore(n)?shortName(n)+' ('+n.split('-')[0]+')':n+' warehouse')}</option>`).join('');
   $('tMetrics').innerHTML=Object.entries(TM).map(([k,m])=>`<button class="pill${k===S.st.tm?' on':''}" data-tm="${k}">${m[0]}</button>`).join('');
-  const [lab,get,f]=TM[S.st.tm],H=hist.slice(-30),inv=S.st.tm==='rank';
+  const [lab,get,f]=TM[S.st.tm],H=dailyAt(hist,(hist[hist.length-1]||L).ts),inv=S.st.tm==='rank',TH=H.length?hourOf(H[H.length-1].ts):hourOf(L.ts);
   const pts=H.map((h,i)=>{const r=h.allSites.find(q=>q[0]===S.st.store);return {i,ts:h.ts,v:r?get(r,h):null,flag:r?!!flagWhy(r):false,row:r,rk:r?rankOf(h).get(r[0]):null}});
   const avg=H.map(h=>inv?null:mean(h.allSites.filter(r=>isStore(r[0])).map(r=>get(r,h))));
   const W=760,Ht=260,pl=52,pr=16,pt=16,pb=40,n=Math.max(H.length-1,1);
@@ -566,18 +574,19 @@ function renderTrend(hist){
   const ax='font-family="Inter Tight, Arial, sans-serif" font-size="11" fill="#8A8B8C"';
   const ticks=[];if(inv){ticks.push(1);for(let v=step;v<ymax;v+=step)ticks.push(v);ticks.push(ymax)}else for(let v=0;v<=ymax+1e-9;v+=step)ticks.push(v);
   let g='';for(const v of ticks)g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="#2E2E2E" stroke-dasharray="3 3"/><text x="${pl-6}" y="${y(v)+4}" text-anchor="end" ${ax}>${f(v)}</text>`;
-  let lastDay='';H.forEach((h,i)=>{const d=dayOf(h.ts);if(d!==lastDay){lastDay=d;g+=`<line x1="${x(i)}" x2="${x(i)}" y1="${pt}" y2="${Ht-pb}" stroke="#242424"/><text x="${x(i)+3}" y="${Ht-22}" ${ax}>${fmtDay.format(new Date(h.ts)).replace(/^\w+, /,'')}</text>`}});
-  g+=`<text x="${pl}" y="${Ht-6}" ${ax}>Each point is an observation update: 10am, 1pm and 5pm (9am, 12pm and 4pm before 6 Nov)</text>`;
+  const lstep=Math.max(1,Math.ceil(H.length/10));
+  H.forEach((h,i)=>{if((H.length-1-i)%lstep)return;g+=`<line x1="${x(i)}" x2="${x(i)}" y1="${pt}" y2="${Ht-pb}" stroke="#242424"/><text x="${x(i)}" y="${Ht-22}" text-anchor="${i===0&&H.length>1?'start':i===H.length-1?'end':'middle'}" ${ax}>${fmtDay.format(new Date(h.ts))}</text>`});
+  g+=`<text x="${pl}" y="${Ht-6}" ${ax}>One point per day at ${hl(TH)} PT, the time of the update you are viewing (weekdays; nearest update that day if ${hl(TH)} wasn't logged)</text>`;
   const seg=pts.filter(p=>p.v!=null);
   const line=seg.length?`<path d="M${seg.map(p=>x(p.i).toFixed(1)+','+y(p.v).toFixed(1)).join('L')}" fill="none" stroke="#FFDE14" stroke-width="2.5" stroke-linejoin="round"/>`:'';
   const av=inv?'':`<path d="M${avg.map((v,i)=>v==null?'':x(i).toFixed(1)+','+y(v).toFixed(1)).filter(Boolean).join('L')}" fill="none" stroke="#CCCCCC" stroke-width="1.25" stroke-dasharray="4 4"/>`;
   const dots=seg.map(p=>`<circle cx="${x(p.i)}" cy="${y(p.v)}" r="${p.flag?4.5:3}" fill="${p.flag?'#FF5A4F':'#FFDE14'}"/>`).join('');
   const guide=S.st.hover!=null?`<line x1="${x(S.st.hover)}" x2="${x(S.st.hover)}" y1="${pt}" y2="${Ht-pb}" stroke="#fff" stroke-opacity=".5"/>`:'';
-  $('trendChart').innerHTML=`<svg id="tsvg" viewBox="0 0 ${W} ${Ht}" tabindex="0" role="img" aria-label="${esc(lab)} for ${esc(S.st.store)} over recent updates">${g}${av}${line}${dots}${guide}<rect x="${pl}" y="${pt}" width="${W-pl-pr}" height="${Ht-pt-pb}" fill="transparent"/></svg>`;
+  $('trendChart').innerHTML=`<svg id="tsvg" viewBox="0 0 ${W} ${Ht}" tabindex="0" role="img" aria-label="${esc(lab)} for ${esc(S.st.store)} at ${hl(TH)} PT each day">${g}${av}${line}${dots}${guide}<rect x="${pl}" y="${pt}" width="${W-pl-pr}" height="${Ht-pt-pb}" fill="transparent"/></svg>`;
   TG={W,pl,pr,n,x,pts,avg,f,lab};
   const flagged=pts.filter(p=>p.flag).length,withV=seg.length;
   const nm=esc(isStore(S.st.store)?shortName(S.st.store):S.st.store);
-  $('trendSub').innerHTML=(inv?(isStore(S.st.store)?`<span style="color:#FFDE14">━</span> ${nm} ops rank among stores at each update (1 = best, top of the chart) &nbsp; <span style="color:#FF5A4F">●</span> flagged. Hover a point for the score breakdown.`:`Warehouses are not ranked. Pick a store to see its rank.`)+' ':`<span style="color:#FFDE14">━</span> ${nm} &nbsp; <span style="color:#CCCCCC">┅</span> average store &nbsp; <span style="color:#FF5A4F">●</span> flagged. `)+`Flagged at ${flagged} of ${withV} updates since ${H.length?runLab(H[0].ts):''}.`;
+  $('trendSub').innerHTML=(inv?(isStore(S.st.store)?`<span style="color:#FFDE14">━</span> ${nm} ops rank among stores at each update (1 = best, top of the chart) &nbsp; <span style="color:#FF5A4F">●</span> flagged. Hover a point for the score breakdown.`:`Warehouses are not ranked. Pick a store to see its rank.`)+' ':`<span style="color:#FFDE14">━</span> ${nm} &nbsp; <span style="color:#CCCCCC">┅</span> average store &nbsp; <span style="color:#FF5A4F">●</span> flagged. `)+`Flagged on ${flagged} of ${withV} days at ${hl(TH)} PT since ${seg.length?fmtDay.format(new Date(seg[0].ts)):H.length?fmtDay.format(new Date(H[0].ts)):''}.`+(()=>{if(seg.length<2||inv)return '';const a=seg[0],b=seg[seg.length-1],d=b.v-a.v,days=Math.round((dnum(dayOf(b.ts))-dnum(dayOf(a.ts))));if(!days)return '';const per=d/days,ff=v=>S.st.tm==='rate'?(v*100).toFixed(1)+' pts':(Math.abs(v)<10?v.toFixed(1):Math.round(v));return ` ${esc(lab)}: ${f(b.v)} now vs ${f(a.v)} on ${fmtDay.format(new Date(a.ts))} (${d>0?'+':''}${ff(d)} over ${days} days, ${per>0?'+':''}${ff(per)} a day).`})();
   renderTTip();
 }
 function renderTTip(){
@@ -608,9 +617,9 @@ function renderOffs(L,hist){
 }
 
 function renderRegions(cur,hist,stale){
-  const last21=hist.slice(-21);
+  const last21=dailyAt(hist,cur.ts,7);
   const R=cur.regions||[];
-  $('regSub').textContent=`Regional totals from the snapshot's own region rows at ${runLab(cur.ts)} PT${stale}. Trend line is open orders over the last 7 days of updates.`;
+  $('regSub').textContent=`Regional totals from the snapshot's own region rows at ${runLab(cur.ts)} PT${stale}. Trend line is open orders at ${hl(hourOf(cur.ts))} PT on each of the last 7 days with store detail.`;
   $('regs').innerHTML=REGS.map(name=>{
     const r=R.find(q=>q[0]===name);if(!r)return '';
     const stores=cur.allSites.filter(s=>regionOf(s[0])===name);
@@ -652,9 +661,9 @@ $('storeSel').addEventListener('change',e=>{S.st.store=e.target.value;renderStor
 $('tMetrics').addEventListener('click',e=>{const b=e.target.closest('[data-tm]');if(b){S.st.tm=b.dataset.tm;renderStores(selRow())}});
 const tbox=$('trendBox');
 const tIdx=e=>{const s=$('tsvg');if(!s||!TG)return null;const r=s.getBoundingClientRect(),vx=(e.clientX-r.left)/r.width*TG.W;return Math.max(0,Math.min(TG.n,Math.round((vx-TG.pl)/(TG.W-TG.pl-TG.pr)*TG.n)))};
-tbox.addEventListener('pointermove',e=>{const i=tIdx(e);if(i!=null&&i!==S.st.hover){S.st.hover=i;renderTrend(runsUpTo(selRow().ts))}});
-tbox.addEventListener('pointerleave',()=>{if(S.st.hover!=null){S.st.hover=null;renderTrend(runsUpTo(selRow().ts))}});
-tbox.addEventListener('keydown',e=>{if(!TG)return;if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();S.st.hover=Math.max(0,Math.min(TG.n,(S.st.hover??TG.n)+(e.key==='ArrowLeft'?-1:1)));renderTrend(runsUpTo(selRow().ts));$('tsvg').focus()}});
+tbox.addEventListener('pointermove',e=>{const i=tIdx(e);if(i!=null&&i!==S.st.hover){S.st.hover=i;renderTrend(runsUpTo(selRow().ts),selRow())}});
+tbox.addEventListener('pointerleave',()=>{if(S.st.hover!=null){S.st.hover=null;renderTrend(runsUpTo(selRow().ts),selRow())}});
+tbox.addEventListener('keydown',e=>{if(!TG)return;if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();S.st.hover=Math.max(0,Math.min(TG.n,(S.st.hover??TG.n)+(e.key==='ArrowLeft'?-1:1)));renderTrend(runsUpTo(selRow().ts),selRow());$('tsvg').focus()}});
 window.addEventListener('resize',()=>{renderTip();renderTTip();wEnd()});
 $('wscroll').addEventListener('scroll',wEnd,{passive:true});
 
@@ -662,15 +671,24 @@ $('wscroll').addEventListener('scroll',wEnd,{passive:true});
   let db=null;try{db=window.claude&&await claude.use('db')}catch(e){db=null}
   if(!db){
     // Outside Claude (e.g. GitHub Pages): read the data file the scheduled runs publish next to this page.
-    try{
+    // Auto-refresh: re-reads the data every 5 minutes while the tab is open (and when it comes back into view), so each hourly update appears without a reload. Viewing "Latest" moves to the new update; a past update you picked stays put.
+    let gen=0;
+    const load=async()=>{
       let d=null;
       // Data comes straight from the repo so hourly updates show even if a GitHub Pages deploy fails; the copy next to this page is the fallback.
       for(const u of ['https://raw.githubusercontent.com/jd-ecomm/ecomm-order-tracker/main/data/tracker.json?t='+Date.now(),'data/tracker.json?t='+Date.now()]){try{const r=await fetch(u,{cache:'no-store'});if(r.ok){const j=await r.json();if(!d||(j.generated||0)>(d.generated||0))d=j}}catch(e){}}
       if(!d)throw new Error('no data');
+      if(gen&&(d.generated||0)<=gen)return;gen=d.generated||1;
       S.rows=(d.snapshots||[]).filter(r=>r&&r.ts&&r.open!=null).sort((a,b)=>a.ts-b.ts);
       S.runs=d.runs||{};S.runList=Object.values(S.runs).filter(r=>r&&r.ts).sort((a,b)=>a.ts-b.ts);
       S.meta=d.latest||null;S.stores=d.stores||{};
-      renderAll();return;
+      renderAll();
+    };
+    try{
+      await load();
+      setInterval(()=>{if(!document.hidden)load().catch(e=>console.error(e))},5*60*1000);
+      document.addEventListener('visibilitychange',()=>{if(!document.hidden)load().catch(e=>console.error(e))});
+      return;
     }catch(e){console.error(e)}
     $('empty').hidden=false;$('empty').textContent='The data file could not be loaded. Try refreshing the page.';$('stamp').innerHTML='Open order snapshot · <b>Offline</b>';return}
   db.collection('snapshots').orderBy('ts','desc').limit(1000).onSnapshot(s=>{S.rows=s.docs.map(d=>d.data()).filter(r=>r&&r.ts&&r.open!=null).sort((a,b)=>a.ts-b.ts);renderAll()},e=>console.error(e));
